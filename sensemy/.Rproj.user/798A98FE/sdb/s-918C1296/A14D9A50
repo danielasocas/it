@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "#Connect to the database R-PsotgreSQL\n#Daniela Socas, Last modified: 27/04/17\n\n#Install Packages \n#install.packages(\"DBI\")\n#install.packages(\"RPostgreSQL\")\n\n#Load Packages\nlibrary(DBI)\nlibrary(RPostgreSQL)\n\ndrv <- dbDriver(\"PostgreSQL\")\npwd <- \"psicopatas\"\n\n#Database to connect \ndb <- \"sensemyfeup\"\n#db <- sensemycity\n\ncon <-dbConnect(drv,host='localhost',port='15432',dbname=db,user='danielasocas',\npassword=pwd)\n\n#List all tables in the database\n#dbListTables(con )\n\n#Summary of the Connection.\n#Summary(con)\n\n#Get list of all the tables in the database.\n#dbSendQuery(conn,\"select * from table_name\")\n\n#Read table in R.\n#table_name<- dbReadTable(conn, \"tablen_name\")\n\n#Close current query.\n#dbClearResult(dbListResults(conn)[[1]])\n\n#Disconnect database.\n#dbDisconnect(conn)",
+    "created" : 1493305492475.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3063530276",
+    "id" : "A14D9A50",
+    "lastKnownWriteTime" : 1493312698,
+    "last_content_update" : 1493312698,
+    "path" : "~/sensemy/con.R",
+    "project_path" : "con.R",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
