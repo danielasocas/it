@@ -1,0 +1,283 @@
+---
+title: "Sense My FEUP - Mobility forecasting based on GPS location tracking"
+author: "Daniela S. Gil"
+output: html_notebook
+---
+
+# PART I: EDA 
+
+## Package installation. 
+```{r echo=FALSE, eval=FALSE}
+#Basics. 
+
+if(! "ggplot2" %in% rownames(installed.packages())){
+  install.packages("ggplot2")
+  library(ggplot2)
+}
+
+if(! "dplyr" %in% rownames(installed.packages())){
+  install.packages("dplyr")
+  library(dplyr)
+}
+```
+
+```{r echo=FALSE, eval=FALSE}
+#connection to database.
+
+if(! "DBI" %in% rownames(installed.packages())){
+  install.packages("DBI")
+  library(DBI)
+}
+if(! "RPostgreSQL" %in% rownames(installed.packages())){
+  install.packages("RPostgreSQL")
+  library(RPostgreSQL)
+}
+```
+
+```{r echo=FALSE, eval=FALSE}
+#Mapping. 
+
+if(! "leaflet" %in% rownames(installed.packages())){
+  install.packages("leaflet")
+  library(leaflet)
+}
+```
+
+```{r echo=FALSE, eval=FALSE}
+#Time management.
+
+if(! "lubridate" %in% rownames(installed.packages())){
+  install.packages("lubridate")
+  library(lubridate)
+}
+```
+
+## Connecting the database.
+```{r echo=FALSE, eval=FALSE}
+# Connecting Sense My FEUP - DS
+
+drv <- dbDriver("PostgreSQL")
+pwd <- "psicopatas"
+
+#Database to connect 
+db <- "sensemyfeup"
+#db <- sensemycity
+
+con <-dbConnect(drv,host='localhost',port='15432',dbname=db,user='danielasocas',
+password=pwd)
+```
+
+```{r echo=FALSE, eval=FALSE}
+# Connecting OpenStreetMap - Marcio Fontes
+pw <- {
+  "y7dWwByZLWso"
+}
+
+drv <- dbDriver("PostgreSQL")
+
+con_osm <- dbConnect(drv, dbname = "openstreetmap",
+                     host = "localhost", port = 15432,
+                     user = "marciofontes", password = pw)
+```
+## Getting data per edge.
+### POINTS per edge. 
+Getting the points filtered by only segments with travelmode = car or bus.
+
+```{r echo=FALSE, eval=FALSE}
+#Obtaining the points through the session and the seconds of the whole segment.  
+
+df_points_edge_osm_cars <- data.frame()
+df_points_edge_osm_cars <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
+                                       FROM sensemyfeup_raw.osmlocation as osm 
+                                          INNER JOIN sensemyfeup.segments as segments 
+                                            USING (session_id)
+                                          INNER JOIN sensemyfeup_raw.session_offsets 
+                                            USING (session_id)
+                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
+                                            segments.travelmode = 'car' OR segments.travelmode =  'bus'
+                                       GROUP BY way_id
+                                       ORDER BY points DESC")
+
+save(df_points_edge_osm_cars, file="df_points_edge_osm_cars.Rda")
+```
+
+### SESSION per edge. 
+Getting the sessions filtered by only segments with travelmode = car or bus.
+
+```{r}
+df_sessions_edge_osm <- dbGetQuery(con, "SELECT way_id, COUNT(DISTINCT session_id) AS sessions
+                                   FROM sensemyfeup_raw.osmlocation as osm 
+                                          INNER JOIN sensemyfeup.segments as segments 
+                                            USING (session_id)
+                                          INNER JOIN sensemyfeup_raw.session_offsets 
+                                            USING (session_id)
+                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
+                                            segments.travelmode = 'car' OR segments.travelmode =  'bus'
+                                       GROUP BY way_id
+                                       ORDER BY points DESC")
+
+save(df_sessions_edge_osm_cars, file="df_sessions_edge_osm_cars.Rda")
+```
+
+
+## ECDF and loading.
+### POINTS 
+```{r echo=FALSE, eval=FALSE}
+# REFERENCE BY POINTS
+#Loading df about to use.
+
+load("df_points_edge_osm_cars.Rda")
+df_osm_edge <- df_points_edge_osm_cars
+
+```
+
+```{r echo=FALSE, eval=FALSE}
+# Listing and obtaining ECDF pf the points.
+
+list_osm_edge <- df_osm_edge[1:500, 1]
+
+fun.ecdf <- ecdf(df_osm_edge$points)
+
+my.ecdf <- fun.ecdf(sort(df_osm_edge$points))
+
+my_ecdf_df <- data.frame(my.ecdf)
+
+my_ecdf_df$points <- sort(df_osm_edge$points)
+
+tail(my_ecdf_df, 400)
+
+P <- ecdf(df_osm_edge$points)
+#grid()
+```
+
+```{r eval= TRUE}
+plot(P, log="x", xlim=c(1, max(df_osm_edge$points)))
+```
+
+### SESSIONS 
+```{r echo=FALSE, eval=FALSE}
+#REFERENCE BY SESSIONS
+
+load("df_sessions_edge_osm.Rda")
+df_osm_edge <- df_sessions_edge_osm_cars
+```
+
+```{r}
+list_osm_edge <- df_osm_edge[1:500, 1]
+
+fun.ecdf <- ecdf(df_osm_edge$sessions)
+
+my.ecdf <- fun.ecdf(sort(df_osm_edge$sessions))
+
+my_ecdf_df <- data.frame(my.ecdf)
+
+my_ecdf_df$sessions <- sort(df_osm_edge$sessions)
+
+tail(my_ecdf_df, 400)
+
+P <- ecdf(df_osm_edge$sessions)
+```
+
+```{r eval= TRUE}
+plot(P, log="x", xlim=c(1, max(df_osm_edge$sessions)))
+```
+
+## Map points/sessions per edge.
+
+```{r echo=FALSE, eval=FALSE}
+# Creating the empty map of Porto
+
+m <- leaflet() %>% setView(lng=-8.61419, lat=41.16311, zoom = 13)
+m <- addTiles(m) 
+m <- addProviderTiles(m, "CartoDB.Positron")
+
+counter <- 1
+
+# Requisit to be connected to con_osm
+# Going through every point of the df selected 
+
+# Defining limits to every color. 
+# More than superior is red.
+# More than medio and less than superior is yellow.
+# Less than medio is green.     
+superior <- 18838
+medio <- 4424
+
+for(way_id in list_osm_edge) {
+  
+  df_way_id <- dbGetQuery(con_osm, paste0("SELECT st_astext(st_transform(way, 4326)) AS line FROM planet_osm_line WHERE planet_osm_line.osm_id = ", way_id))
+  
+  line <- df_way_id$line
+  line <- as.character(line)
+  
+  line <- unlist(strsplit(line, split='(', fixed=TRUE))[2]
+  line <- substr(line, 1, nchar(line) - 1)
+  
+  parsed_line <- strsplit(line, ",")
+  
+  lons <- c()
+  lats <- c()
+  
+  if(length(parsed_line) != 0) {
+    
+    #Defining lons and lats as variables to use later.
+
+    for(coord in parsed_line[[1]]) {
+      
+      lon <- unlist(strsplit(coord, split=' ', fixed=TRUE))[1]
+      lat <- unlist(strsplit(coord, split=lon, fixed=TRUE))[2]
+      lat <- substr(lat, 2, nchar(lat))
+      
+      lon <- as.numeric(lon)
+      lat <- as.double(lat)
+      
+      lons <- c(lons, lon)
+      lats <- c(lats, lat)
+      
+    }
+    
+    # Deciding the color of the point by the counter.
+
+    if(df_osm_edge[counter, 2] > superior) {
+      
+      m <- addPolylines(m, lons, lats, color='red')
+      
+    } else if (df_osm_edge[counter, 2] >= medio && df_osm_edge[counter, 2] <= superior) {
+      
+      m <- addPolylines(m, lons, lats, color='yellow')
+      
+    } else {
+      
+      m <- addPolylines(m, lons, lats, color='green')
+      
+    }
+    
+    counter <- counter + 1 
+    
+  }
+  
+  #print(line)
+  
+}
+
+```
+
+```{r eval= TRUE}
+# Showing Map.
+m 
+```
+
+## Writing the results
+
+```{r echo=FALSE}
+write.xlsx(df_edge_osm, file="df_sessions_edge_osm.xlsx")
+```
+
+
+# Disconnecting Databases.
+```{r echo=FALSE, eval=FALSE}
+dbDisconnect(con_osm)
+dbDisconnect(con)
+
+```
+
