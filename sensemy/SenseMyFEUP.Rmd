@@ -19,6 +19,17 @@ if(! "dplyr" %in% rownames(installed.packages())){
   install.packages("dplyr")
   library(dplyr)
 }
+if(! "xlsx" %in% rownames(installed.packages())){
+  install.packages("xlsx")
+  library(xlsx)
+}
+
+if(! "magrittr" %in% rownames(installed.packages())){
+  install.packages("magrittr")
+  library(magrittr)
+}
+
+
 ```
 
 ```{r echo=FALSE, eval=FALSE}
@@ -52,6 +63,14 @@ if(! "lubridate" %in% rownames(installed.packages())){
 }
 ```
 
+```{r echo=FALSE, eval=FALSE}
+#Write Excel
+library(xlsx)
+library(rJava)
+library(xlsxjars)
+```
+
+
 ## Connecting the database.
 ```{r echo=FALSE, eval=FALSE}
 # Connecting Sense My FEUP - DS
@@ -79,7 +98,41 @@ con_osm <- dbConnect(drv, dbname = "openstreetmap",
                      host = "localhost", port = 15432,
                      user = "marciofontes", password = pw)
 ```
+
+## General EDA.
+### Getting data. 
+```{r}
+df_segments_length <- data.frame()
+df_segments_length <- dbGetQuery(con, "SELECT session_id, SUM(length) as distance, travelmode
+                                      FROM danielasocas.segments_travelmode as segments 
+                                      WHERE segments.travelmode = 'car' OR segments.travelmode = 'bus'
+                                      GROUP BY session_id, travelmode")
+```
+
+```{r}
+df_segments <- subset(df_segments_length, distance < mean(distance))
+
+ggploy(df_segments_length, aes(travelmode, distance)) +
+  geom_bar()
+```
+
+
+```{r}
+df_segments_timestamp <- data.frame()
+df_segments_timestamp <- dbGetQuery(con, "SELECT *
+                                      FROM danielasocas.segments_timestamp
+                                      LIMIT 500")
+```
+
+
+```{r}
+df_segments_timestamp <- mutate(df_segments_timestamp, date= ymd_hms(timestamp, tz="Europe/Lisboa"),
+                                WeekDay=wday(timestamp),nWeekDay=wday(timestamp,label=TRUE), time = hms(timestamp))
+
+```
+
 ## Getting data per edge.
+
 ### POINTS per edge. 
 Getting the points filtered by only segments with travelmode = car or bus.
 
@@ -89,7 +142,7 @@ Getting the points filtered by only segments with travelmode = car or bus.
 df_points_edge_osm_cars <- data.frame()
 df_points_edge_osm_cars <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
                                        FROM sensemyfeup_raw.osmlocation as osm 
-                                          INNER JOIN sensemyfeup.segments as segments 
+                                          INNER JOIN danielasocas.segments_travelmode as segments 
                                             USING (session_id)
                                           INNER JOIN sensemyfeup_raw.session_offsets 
                                             USING (session_id)
@@ -98,29 +151,31 @@ df_points_edge_osm_cars <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
                                        GROUP BY way_id
                                        ORDER BY points DESC")
 
-save(df_points_edge_osm_cars, file="df_points_edge_osm_cars.Rda")
+                                              save(df_points_edge_osm_cars, file="df_points_edge_osm_cars2.Rda")
 ```
 
 ### SESSION per edge. 
 Getting the sessions filtered by only segments with travelmode = car or bus.
 
 ```{r}
-df_sessions_edge_osm <- dbGetQuery(con, "SELECT way_id, COUNT(DISTINCT session_id) AS sessions
+
+df_sessions_edge_osm_cars <- data.frame()
+df_sessions_edge_osm_cars <- dbGetQuery(con, "SELECT way_id, COUNT(DISTINCT session_id) AS sessions
                                    FROM sensemyfeup_raw.osmlocation as osm 
-                                          INNER JOIN sensemyfeup.segments as segments 
+                                          INNER JOIN danielasocas.segments_travelmode as segments 
                                             USING (session_id)
                                           INNER JOIN sensemyfeup_raw.session_offsets 
                                             USING (session_id)
                                        WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
                                             segments.travelmode = 'car' OR segments.travelmode =  'bus'
                                        GROUP BY way_id
-                                       ORDER BY points DESC")
+                                       ORDER BY sessions DESC")
 
 save(df_sessions_edge_osm_cars, file="df_sessions_edge_osm_cars.Rda")
 ```
 
 
-## ECDF and loading.
+## Plots edges and loading.
 ### POINTS 
 ```{r echo=FALSE, eval=FALSE}
 # REFERENCE BY POINTS
@@ -131,6 +186,17 @@ df_osm_edge <- df_points_edge_osm_cars
 
 ```
 
+```{r}
+p1 <- subset(df_osm_edge, points < mean(points)) 
+summary()
+
+ggplot(p1, aes(points)) + geom_histogram(binwidth = 10) +
+  xlim(0,1000)
+
+
+```
+
+####ECDF 
 ```{r echo=FALSE, eval=FALSE}
 # Listing and obtaining ECDF pf the points.
 
@@ -158,12 +224,23 @@ plot(P, log="x", xlim=c(1, max(df_osm_edge$points)))
 ```{r echo=FALSE, eval=FALSE}
 #REFERENCE BY SESSIONS
 
-load("df_sessions_edge_osm.Rda")
+load("df_sessions_edge_osm_cars.Rda")
 df_osm_edge <- df_sessions_edge_osm_cars
 ```
 
+
 ```{r}
-list_osm_edge <- df_osm_edge[1:500, 1]
+p1 <- subset(df_osm_edge, sessions < mean(sessions)) 
+summary()
+
+ggplot(p1, aes(sessions)) + geom_histogram(binwidth=1) +
+  scale_x_continuous(breaks = seq(0,8,1))
+
+```
+
+####ECDF
+```{r}
+list_osm_edge <- df_osm_edge[, 1]
 
 fun.ecdf <- ecdf(df_osm_edge$sessions)
 
@@ -270,7 +347,12 @@ m
 ## Writing the results
 
 ```{r echo=FALSE}
-write.xlsx(df_edge_osm, file="df_sessions_edge_osm.xlsx")
+#Points
+write.xlsx(df_osm_edge, file="df_points_edge_osm.xlsx")
+
+#Sessions
+write.xlsx(df_osm_edge, file="df_sessions_edge_osm.xlsx")
+
 ```
 
 
