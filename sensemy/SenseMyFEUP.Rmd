@@ -12,24 +12,29 @@ output: html_notebook
 
 if(! "ggplot2" %in% rownames(installed.packages())){
   install.packages("ggplot2")
-  library(ggplot2)
 }
 
 if(! "dplyr" %in% rownames(installed.packages())){
   install.packages("dplyr")
-  library(dplyr)
 }
+
+if(! "tidyr" %in% rownames(installed.packages())){
+  install.packages("tidyr")
+}
+
 if(! "xlsx" %in% rownames(installed.packages())){
   install.packages("xlsx")
-  library(xlsx)
 }
 
 if(! "magrittr" %in% rownames(installed.packages())){
   install.packages("magrittr")
-  library(magrittr)
 }
 
-
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(xlsx)
+#library(magrittr)
 ```
 
 ```{r echo=FALSE, eval=FALSE}
@@ -37,12 +42,13 @@ if(! "magrittr" %in% rownames(installed.packages())){
 
 if(! "DBI" %in% rownames(installed.packages())){
   install.packages("DBI")
-  library(DBI)
 }
 if(! "RPostgreSQL" %in% rownames(installed.packages())){
   install.packages("RPostgreSQL")
-  library(RPostgreSQL)
 }
+
+library(DBI)
+library(RPostgreSQL)
 ```
 
 ```{r echo=FALSE, eval=FALSE}
@@ -50,8 +56,19 @@ if(! "RPostgreSQL" %in% rownames(installed.packages())){
 
 if(! "leaflet" %in% rownames(installed.packages())){
   install.packages("leaflet")
-  library(leaflet)
 }
+
+if(! "leaflet" %in% rownames(installed.packages())){
+  install.packages("ggmap")
+  library(ggmap)
+}
+
+if(! "sp" %in% rownames(installed.packages())){
+  install.packages("sp")
+  library(sp)
+}
+
+library(leaflet)
 ```
 
 ```{r echo=FALSE, eval=FALSE}
@@ -59,8 +76,9 @@ if(! "leaflet" %in% rownames(installed.packages())){
 
 if(! "lubridate" %in% rownames(installed.packages())){
   install.packages("lubridate")
-  library(lubridate)
 }
+
+library(lubridate)
 ```
 
 ```{r echo=FALSE, eval=FALSE}
@@ -103,31 +121,43 @@ con_osm <- dbConnect(drv, dbname = "openstreetmap",
 ### Getting data. 
 ```{r}
 df_segments_length <- data.frame()
-df_segments_length <- dbGetQuery(con, "SELECT session_id, SUM(length) as distance, travelmode
+df_segments_length_tm <- dbGetQuery(con, "SELECT session_id, SUM(length) as distance, travelmode
                                       FROM danielasocas.segments_travelmode as segments 
                                       WHERE segments.travelmode = 'car' OR segments.travelmode = 'bus'
                                       GROUP BY session_id, travelmode")
+
+df_segments_length <- dbGetQuery(con, "SELECT session_id, SUM(length) as distance
+                                      FROM danielasocas.segments_travelmode as segments 
+                                      WHERE segments.travelmode = 'car' OR segments.travelmode = 'bus'
+                                      GROUP BY session_id")
 ```
 
 ```{r}
-df_segments <- subset(df_segments_length, distance < mean(distance))
+df_segments <- subset(df_segments_length, distance < IQR(distance,0.75) )
 
-ggploy(df_segments_length, aes(travelmode, distance)) +
-  geom_bar()
+ggplot(df_segments, aes(distance)) +
+  geom_histogram(bins = 10)
+
+ggplot(df_segments_length, aes(travelmode, distance, color = travelmode)) +
+  geom_boxplot()
+
+ggplot(df_segments, aes(distance, color = travelmode)) +
+  geom_histogram(binwidth = 1)
+
+ggplot(df_segments, aes(travelmode, distance, color = travelmode)) +
+  geom_boxplot()
 ```
 
 
 ```{r}
 df_segments_timestamp <- data.frame()
-df_segments_timestamp <- dbGetQuery(con, "SELECT *
-                                      FROM danielasocas.segments_timestamp
-                                      LIMIT 500")
+df_segments_timestamp <- dbGetQuery(con, "SELECT session_id, time_start,time_end, length, travelmode
+                                      FROM danielasocas.segments_travelmode as segments
+                                      WHERE segments.travelmode = 'car' OR segments.travelmode = 'bus'")
 ```
 
 
 ```{r}
-df_segments_timestamp <- mutate(df_segments_timestamp, date= ymd_hms(timestamp, tz="Europe/Lisboa"),
-                                WeekDay=wday(timestamp),nWeekDay=wday(timestamp,label=TRUE), time = hms(timestamp))
 
 ```
 
@@ -200,7 +230,11 @@ ggplot(p1, aes(points)) + geom_histogram(binwidth = 10) +
 ```{r echo=FALSE, eval=FALSE}
 # Listing and obtaining ECDF pf the points.
 
-list_osm_edge <- df_osm_edge[1:500, 1]
+prt <- 1
+set.seed(4218)
+sp <- sample(1:nrow(df_osm_edge), as.integer(prt * nrow(df_osm_edge)))
+
+list_osm_edge <- df_osm_edge[sp, 1]
 
 fun.ecdf <- ecdf(df_osm_edge$points)
 
@@ -212,12 +246,13 @@ my_ecdf_df$points <- sort(df_osm_edge$points)
 
 tail(my_ecdf_df, 400)
 
-P <- ecdf(df_osm_edge$points)
+P <- ecdf(subset(df_osm_edge, points < quantile(df_osm_edge$points,.9))$points)
 #grid()
 ```
 
 ```{r eval= TRUE}
 plot(P, log="x", xlim=c(1, max(df_osm_edge$points)))
+plot(P)
 ```
 
 ### SESSIONS 
@@ -262,6 +297,29 @@ plot(P, log="x", xlim=c(1, max(df_osm_edge$sessions)))
 ## Map points/sessions per edge.
 
 ```{r echo=FALSE, eval=FALSE}
+# Map color parameter. 
+
+# Require to be connected to con_osm
+# Going through every point of the df selected 
+
+# Defining limits to every color. 
+# More than superior is red.
+# More than medio and less than superior is yellow.
+# Less than medio is green.     
+
+#Points
+superior <- quantile(df_osm_edge$points, 0.9)
+medio <- quantile(df_osm_edge$points, 0.7)
+low <- quantile(df_osm_edge$points, 0.5) 
+
+#Sessions 
+#superior <- quantile(df_osm_edge$sessions, 0.9)
+#medio <- quantile(df_osm_edge$sessions, 0.7)
+#low <- quantile(df_osm_edge$sessions, 0.5) 
+```
+
+### Mapping 
+```{r echo=FALSE, eval=FALSE}
 # Creating the empty map of Porto
 
 m <- leaflet() %>% setView(lng=-8.61419, lat=41.16311, zoom = 13)
@@ -269,16 +327,6 @@ m <- addTiles(m)
 m <- addProviderTiles(m, "CartoDB.Positron")
 
 counter <- 1
-
-# Requisit to be connected to con_osm
-# Going through every point of the df selected 
-
-# Defining limits to every color. 
-# More than superior is red.
-# More than medio and less than superior is yellow.
-# Less than medio is green.     
-superior <- 18838
-medio <- 4424
 
 for(way_id in list_osm_edge) {
   
@@ -313,29 +361,29 @@ for(way_id in list_osm_edge) {
       
     }
     
-    # Deciding the color of the point by the counter.
+    # Deciding the color of the point.
 
     if(df_osm_edge[counter, 2] > superior) {
+          
+          m <- addPolylines(m, lons, lats, color='red')
+          
+        } else if (df_osm_edge[counter, 2] >= medio && df_osm_edge[counter, 2] <= superior) {
+          
+          m <- addPolylines(m, lons, lats, color='yellow')
+          
+        } else if (df_osm_edge[counter, 2] >= low && df_osm_edge[counter, 2] <= medio) {
+          
+          m <- addPolylines(m, lons, lats, color='green')
+          
+        }
+        
+        counter <- counter + 1 
+        
+      }
       
-      m <- addPolylines(m, lons, lats, color='red')
-      
-    } else if (df_osm_edge[counter, 2] >= medio && df_osm_edge[counter, 2] <= superior) {
-      
-      m <- addPolylines(m, lons, lats, color='yellow')
-      
-    } else {
-      
-      m <- addPolylines(m, lons, lats, color='green')
+      #print(line)
       
     }
-    
-    counter <- counter + 1 
-    
-  }
-  
-  #print(line)
-  
-}
 
 ```
 
