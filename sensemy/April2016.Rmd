@@ -1,0 +1,271 @@
+---
+title: 'Sense My FEUP - April 2016 Data '
+author: "Daniela S. Gil"
+output: html_notebook
+---
+
+```{r echo = FALSE, eval=FALSE}
+#save.image("SensemyWorkSpace.RData")
+load("df_first_session_cars_april16.Rda")
+load("SensemyWorkSpace.RData")
+
+```
+
+
+# SenseMyFEUP data
+ Data is filtered by travelmode (car and bus) and dat (April 2016).
+
+```{r echo = FALSE, eval=FALSE}
+#All points
+df_osm_edge <- df_points_edge_cars_april16
+
+#Day
+df_osm_edge <- df_points_edge_cars_april16_day
+
+# Night 
+df_osm_edge <- df_points_edge_cars_april16_night
+
+#df_ <- df_first_session_cars_april16 %>%
+#  filter( HOUR(time_start) > 7, HOUR(time_start) < 20)
+
+```
+
+Top 10% points
+```{r echo = FALSE, eval=TRUE}
+summary(df_osm_edge$points)
+quantile(df_osm_edge$points, 0.9)
+
+#filter(df_osm_edge, points > quantile(df_osm_edge$points, 0.9)) %>% 
+#  ggplot(aes(points)) +
+#  geom_histogram()
+
+```
+
+## ECDF 
+
+```{r echo = FALSE, eval = FALSE}
+
+list_osm_edge <- df_osm_edge[, 1]
+fun.ecdf <- ecdf(df_osm_edge$points)
+
+my.ecdf <- fun.ecdf(sort(df_osm_edge$points))
+
+my_ecdf_df <- data.frame(my.ecdf)
+
+my_ecdf_df$points <- sort(df_osm_edge$points)
+tail(my_ecdf_df, 400)
+
+```
+
+```{r echo=FALSE }
+#P_all <- subset(df_osm_edge, points < quantile(df_osm_edge$points,.9))
+#P_day <- subset(df_osm_edge, points < quantile(df_osm_edge$points,.9))
+#P_night <- subset(df_osm_edge, points < quantile(df_osm_edge$points,.9))
+
+#P <- ecdf(subset(df_osm_edge, points < quantile(df_osm_edge$points,.9))$points)
+#plot(P, log="x", xlim=c(1, max(df_osm_edge$points)))
+```
+
+ECDF all by #points 
+```{r  echo = FALSE, eval = TRUE }
+
+ecdf_all <- ggplot(df_osm_edge, aes(points)) + 
+  scale_x_log10() + stat_ecdf(geom = "step")
+
+ecdf_day<- ggplot(df_osm_edge, aes(points)) + 
+  scale_x_log10() + stat_ecdf(geom = "step")
+
+ecdf_night <- ggplot(df_osm_edge, aes(points)) + 
+  scale_x_log10() + stat_ecdf(geom = "step")
+
+grid.arrange(ecdf_all,ecdf_day,ecdf_night,  ncol=3)
+```
+
+```{r}
+ecdf_all 
+ecdf_day
+ecdf_night
+```
+
+
+ECDF by #sessions 
+
+```{r echo=FALSE}
+df_intersession_april %>% 
+  group_by(way_id) %>% 
+  summarise(sessions = n() ) %>% 
+  ggplot(aes(sessions)) + 
+  scale_x_log10() + stat_ecdf(geom = "step") 
+  
+```
+## Map points April 2016
+
+```{r echo=FALSE, eval=FALSE}
+# Creating the empty map of Porto
+
+#Points
+superior <- quantile(df_osm_edge$points, 0.9)
+medio <- quantile(df_osm_edge$points, 0.7)
+low <- quantile(df_osm_edge$points, 0.5) 
+
+m <- leaflet() %>% setView(lng=-8.61419, lat=41.16311, zoom = 13)
+m <- addTiles(m) 
+m <- addProviderTiles(m, "CartoDB.Positron")
+
+counter <- 1
+
+for(way_id in list_osm_edge) {
+  
+  df_way_id <- dbGetQuery(con_osm, paste0("SELECT st_astext(st_transform(way, 4326)) AS line FROM planet_osm_line WHERE planet_osm_line.osm_id = ", way_id))
+  
+  line <- df_way_id$line
+  line <- as.character(line)
+  
+  line <- unlist(strsplit(line, split='(', fixed=TRUE))[2]
+  line <- substr(line, 1, nchar(line) - 1)
+  
+  parsed_line <- strsplit(line, ",")
+  
+  lons <- c()
+  lats <- c()
+  
+  if(length(parsed_line) != 0) {
+    
+    #Defining lons and lats as variables to use later.
+
+    for(coord in parsed_line[[1]]) {
+      
+      lon <- unlist(strsplit(coord, split=' ', fixed=TRUE))[1]
+      lat <- unlist(strsplit(coord, split=lon, fixed=TRUE))[2]
+      lat <- substr(lat, 2, nchar(lat))
+      
+      lon <- as.numeric(lon)
+      lat <- as.double(lat)
+      
+      lons <- c(lons, lon)
+      lats <- c(lats, lat)
+      
+    }
+    
+    # Deciding the color of the point.
+
+    if(df_osm_edge[counter, 2] > superior) {
+          
+          m <- addPolylines(m, lons, lats, color='red')
+          
+        } else if (df_osm_edge[counter, 2] >= medio && df_osm_edge[counter, 2] <= superior) {
+          
+          m <- addPolylines(m, lons, lats, color='yellow')
+          
+        } else if (df_osm_edge[counter, 2] >= low && df_osm_edge[counter, 2] <= medio) {
+          
+          m <- addPolylines(m, lons, lats, color='green')
+          
+        }
+        
+        counter <- counter + 1 
+        
+      }
+      
+      #print(line)
+      
+    }
+
+```
+
+Traffic  Map April 2016
+```{r eval= TRUE}
+# Showing Map.
+m 
+```
+Traffic day Map April 2016
+```{r}
+#m_day <- m 
+m_day
+```
+
+Traffic night Map April 2016
+```{r }
+#m_night <- m
+m_night
+
+```
+
+
+## Intersession times
+
+```{r echo=FALSE, eval=FALSE}
+# Transforming seconds to timestamp and calculating intersession time.
+
+df_intersession_april$time <- as.POSIXct(df_intersession_april$min, origin="1970-01-01")
+
+df_intersession_april <- df_intersession_april  %>%
+  arrange(desc(way_id), time) %>% 
+  mutate(intersession_time = c(0,as.numeric(diff(time), units="mins")))
+
+# Remove Min column
+# df_intersession_april$min <- NULL 
+```
+
+```{r}
+summary(df_intersession_april$intersession_time)
+
+df_intersession_april %>% 
+  filter(intersession_time > 15) %>% 
+  ggplot(aes(intersession_time)) + 
+  geom_histogram()
+```
+
+
+### ECDF 
+```{r echo=FALSE}
+e1 <- ggplot(subset(df_intersession_april, intersession_time > 0), aes(intersession_time)) + 
+  stat_ecdf(geom = "step")
+
+e2 <- ggplot(subset(df_intersession_april, intersession_time > 0), aes(intersession_time)) + 
+  scale_x_log10() +stat_ecdf(geom = "step") 
+
+grid.arrange(e1, e2, ncol= 2)
+```
+
+
+Lowest 10% 
+
+
+```{r echo=FALSE, eval=TRUE}
+subset(df_intersession_april, intersession_time > quantile(df_intersession_april$intersession_time, 0.1)) %>% 
+  ggplot(aes(intersession_time)) +
+  geom_histogram(binwidth = 1000) + 
+  scale_x_continuous(breaks = seq(0,20000,5000))
+```
+
+## By date 
+
+```{r echo= FALSE} 
+df_intersession_april %>% 
+  group_by(weekday =wday(time)) %>% 
+  summarise(way_ids = n()) %>% 
+  ggplot(aes(weekday,way_ids)) + 
+  geom_line() +
+  scale_x_continuous(breaks = seq(0,23,1))
+
+```
+
+```{r echo= FALSE}
+df_intersession_april %>% 
+  group_by(day =day(time)) %>% 
+  summarise(n = n()) %>% 
+  ggplot(aes(day,n)) + 
+  geom_line() + 
+  scale_x_continuous(breaks = seq(1,30,1))
+
+```
+```{r echo= FALSE} 
+df_intersession_april %>% 
+  group_by(hour =hour(time)) %>% 
+  summarise(n = n()) %>% 
+  ggplot(aes(hour,n)) + 
+  geom_line() +
+  scale_x_continuous(breaks = seq(0,23,1))
+
+```

@@ -4,7 +4,7 @@ author: "Daniela S. Gil"
 output: html_notebook
 ---
 
-# PART I: EDA 
+# PART I: Base analysis.  
 
 ## Package installation. 
 ```{r echo=FALSE, eval=FALSE}
@@ -30,11 +30,18 @@ if(! "magrittr" %in% rownames(installed.packages())){
   install.packages("magrittr")
 }
 
+if(! "gridExtra" %in% rownames(installed.packages())){
+  install.packages("gridExtra")
+}
+
+library(gridExtra)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(xlsx)
 #library(magrittr)
+#library(lattice)
+#library(latticeExtra)
 ```
 
 ```{r echo=FALSE, eval=FALSE}
@@ -181,7 +188,7 @@ df_points_edge_osm_cars <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
                                        GROUP BY way_id
                                        ORDER BY points DESC")
 
-                                              save(df_points_edge_osm_cars, file="df_points_edge_osm_cars2.Rda")
+save(df_points_edge_osm_cars, file="df_points_edge_osm_cars2.Rda")
 ```
 
 ### SESSION per edge. 
@@ -205,7 +212,7 @@ save(df_sessions_edge_osm_cars, file="df_sessions_edge_osm_cars.Rda")
 ```
 
 
-## Plots edges and loading.
+## Plots edges and LOADING
 ### POINTS 
 ```{r echo=FALSE, eval=FALSE}
 # REFERENCE BY POINTS
@@ -214,11 +221,14 @@ save(df_sessions_edge_osm_cars, file="df_sessions_edge_osm_cars.Rda")
 load("df_points_edge_osm_cars.Rda")
 df_osm_edge <- df_points_edge_osm_cars
 
+df_osm_edge <- df_points_edge_cars_april16
+
 ```
 
+#### Histograms
 ```{r}
 p1 <- subset(df_osm_edge, points < mean(points)) 
-summary()
+summary(p1)
 
 ggplot(p1, aes(points)) + geom_histogram(binwidth = 10) +
   xlim(0,1000)
@@ -226,7 +236,7 @@ ggplot(p1, aes(points)) + geom_histogram(binwidth = 10) +
 
 ```
 
-####ECDF 
+#### ECDF 
 ```{r echo=FALSE, eval=FALSE}
 # Listing and obtaining ECDF pf the points.
 
@@ -235,7 +245,6 @@ set.seed(4218)
 sp <- sample(1:nrow(df_osm_edge), as.integer(prt * nrow(df_osm_edge)))
 
 list_osm_edge <- df_osm_edge[sp, 1]
-
 fun.ecdf <- ecdf(df_osm_edge$points)
 
 my.ecdf <- fun.ecdf(sort(df_osm_edge$points))
@@ -243,16 +252,16 @@ my.ecdf <- fun.ecdf(sort(df_osm_edge$points))
 my_ecdf_df <- data.frame(my.ecdf)
 
 my_ecdf_df$points <- sort(df_osm_edge$points)
-
 tail(my_ecdf_df, 400)
 
 P <- ecdf(subset(df_osm_edge, points < quantile(df_osm_edge$points,.9))$points)
+
 #grid()
 ```
 
 ```{r eval= TRUE}
 plot(P, log="x", xlim=c(1, max(df_osm_edge$points)))
-plot(P)
+
 ```
 
 ### SESSIONS 
@@ -408,6 +417,102 @@ write.xlsx(df_osm_edge, file="df_sessions_edge_osm.xlsx")
 ```{r echo=FALSE, eval=FALSE}
 dbDisconnect(con_osm)
 dbDisconnect(con)
+
+```
+
+
+
+# PART II: only data of April 2016.
+
+## Getting data from database.
+
+### Points April16
+All
+```{r}
+df_points_edge_cars_april16 <- data.frame()
+df_points_edge_cars_april16 <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
+                                       FROM sensemyfeup_raw.osmlocation as osm 
+                                          INNER JOIN danielasocas.segments_travelmode as segments 
+                                            USING (session_id)
+                                          INNER JOIN sensemyfeup_raw.session_offsets 
+                                            USING (session_id)
+                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
+                                            (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND 
+                                            EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016
+                                       GROUP BY way_id
+                                       ORDER BY points DESC")
+
+save(df_points_edge_cars_april16, file="df_points_edge_cars_april16.Rda")
+```
+
+Day time
+```{r}
+df_points_edge_cars_april16_day <- data.frame()
+df_points_edge_cars_april16_day <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
+                                       FROM sensemyfeup_raw.osmlocation as osm 
+                                          INNER JOIN danielasocas.segments_travelmode as segments 
+                                            USING (session_id)
+                                          INNER JOIN sensemyfeup_raw.session_offsets 
+                                            USING (session_id)
+                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
+                                            (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND 
+                                            EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016 AND
+EXTRACT(HOUR from time_start) >= 7 AND EXTRACT(HOUR from time_start) < 20
+                                       GROUP BY way_id
+                                       ORDER BY points DESC")
+
+save(df_points_edge_cars_april16_day, file="df_points_edge_cars_april16_day.Rda")
+```
+
+Night time 
+```{r}
+df_points_edge_cars_april16_night <- data.frame()
+df_points_edge_cars_april16_night <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
+                                       FROM sensemyfeup_raw.osmlocation as osm 
+                                          INNER JOIN danielasocas.segments_travelmode as segments 
+                                            USING (session_id)
+                                          INNER JOIN sensemyfeup_raw.session_offsets 
+                                            USING (session_id)
+                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
+                                            (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND 
+                                            EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016 AND
+EXTRACT(HOUR from time_start) >= 20 OR EXTRACT(HOUR from time_start) < 7
+                                       GROUP BY way_id
+                                       ORDER BY points DESC")
+
+save(df_points_edge_cars_april16_night, file="df_points_edge_cars_april16_night.Rda")
+```
+
+
+### Just first session, April16 
+```{r echo=FALSE, eval=FALSE}
+df_first_session_cars_april16 <- data.frame()
+df_first_session_cars_april16 <- dbGetQuery(con, "SELECT distinct on (session_id) session_id, time_start,time_end
+                                          FROM danielasocas.segments_travelmode AS segments
+                                          WHERE (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND
+                                          EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016
+                                          ORDER BY session_id, time_start")
+
+save(df_first_session_cars_april16, file="df_first_session_cars_april16.Rda")
+```
+
+### Way id time intersession 
+
+```{r}
+
+df_intersession_april <- data.frame()
+df_intersession_april <- dbGetQuery(con, "SELECT session_id, way_id, MIN(seconds) as seconds
+                                                  FROM sensemyfeup_raw.osmlocation AS osm
+                                                  INNER JOIN danielasocas.segments_vehicules_april AS segments
+	                                                  USING (session_id)
+                                                  INNER JOIN sensemyfeup_raw.session_offsets 
+	                                                  USING (session_id)
+                                                  WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end)
+                                                  GROUP BY way_id, session_id
+                                                  ORDER BY way_id")
+
+save(df_intersession_april, file="df_intersession_april.Rda")
+
 
 ```
 
