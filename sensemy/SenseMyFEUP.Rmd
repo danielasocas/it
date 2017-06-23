@@ -62,19 +62,22 @@ library(RPostgreSQL)
 #Mapping. 
 
 if(! "leaflet" %in% rownames(installed.packages())){
-  install.packages("leaflet")
+  install.packages("leaflet",dependencies = TRUE)
 }
 
-if(! "leaflet" %in% rownames(installed.packages())){
-  install.packages("ggmap")
-  library(ggmap)
-}
 
 if(! "sp" %in% rownames(installed.packages())){
   install.packages("sp")
   library(sp)
 }
 
+if(! "mapview" %in% rownames(installed.packages())){
+  install.packages("mapview",dependencies = TRUE)
+  library(mapview)
+}
+
+library(htmlwidgets)
+library(mapview)
 library(leaflet)
 ```
 
@@ -94,7 +97,6 @@ library(xlsx)
 library(rJava)
 library(xlsxjars)
 ```
-
 
 ## Connecting the database.
 ```{r echo=FALSE, eval=FALSE}
@@ -422,6 +424,7 @@ dbDisconnect(con)
 
 
 
+
 # PART II: only data of April 2016.
 
 ## Getting data from database.
@@ -513,6 +516,33 @@ df_intersession_april <- dbGetQuery(con, "SELECT session_id, way_id, MIN(seconds
 
 save(df_intersession_april, file="df_intersession_april.Rda")
 
+```
+
+### Speed
+
+
+
+
+```{r}
+
+df_speed <- data.frame()
+df_speed <- dbGetQuery(con, "SELECT session_id, segment_id, way_id, osm.seconds, osm.lat, osm.lon, gs.speed
+                            FROM segments_vehicules_april as segments
+                              INNER JOIN sensemyfeup_raw.gslocation as gs
+                                USING (session_id)
+                              INNER JOIN sensemyfeup_raw.osmlocation as osm
+                                USING (session_id)
+                            WHERE (osm.seconds between segments.seconds_start AND segments.seconds_end) AND
+gs.seconds = osm.seconds AND gs.millis = osm.millis AND 
+(alt != 0  OR  track != 0)")
+
+save(df_speed, file="df_speed.Rda")
 
 ```
+
+
+
+
+
+
 

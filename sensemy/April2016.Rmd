@@ -1,5 +1,5 @@
 ---
-title: 'Sense My FEUP - April 2016 Data '
+title: 'Sense My FEUP - April 2016 Data'
 author: "Daniela S. Gil"
 output: html_notebook
 ---
@@ -13,7 +13,9 @@ load("SensemyWorkSpace.RData")
 
 
 # SenseMyFEUP data
- Data is filtered by travelmode (car and bus) and dat (April 2016).
+
+## Data loading
+ Data is filtered by travelmode (car and bus) and date (April 2016).      
 
 ```{r echo = FALSE, eval=FALSE}
 #All points
@@ -30,22 +32,61 @@ df_osm_edge <- df_points_edge_cars_april16_night
 
 ```
 
+
+```{r echo = FALSE }
+# Filter by median interssion time
+df_osm_edge <- df_intersession_april %>% 
+  group_by(way_id) %>% 
+  summarise(median_itm = median(intersession_time), n_session = n()+1) %>% 
+  filter(median_itm < 90, n_session > 5) %>% 
+  merge( y = df_osm_edge, by = "way_id") 
+  
+#Filter by day and the median 
+df_osm_edge <- df_intersession_april %>% 
+  filter(hour(time) >=7, hour(time) <= 20,intersession_time > 0) %>% 
+  group_by(way_id) %>% 
+  summarise(median_itm = median(intersession_time), n_session = n()+1) %>% 
+  filter( median_itm < 90) %>% 
+  merge( y = df_osm_edge, by = "way_id") 
+
+#Filter by night and the median 
+df_osm_edge <- df_intersession_april %>% 
+  filter(intersession_time > 0, hour(time) < 7 | hour(time) > 20) %>% 
+  group_by(way_id) %>% 
+  summarise(median_itm = median(intersession_time), n_session = n()+1) %>% 
+  filter( median_itm < 120) %>% 
+  merge( y = df_osm_edge, by = "way_id") 
+
+```
+
+
+```{r echo=FALSE}
+#Necessary for mapping 
+#Reorder columns
+df_osm_edge <- df_osm_edge %>% 
+  select(way_id, points, median_itm, n_session)
+
+list_osm_edge <- df_osm_edge[, 1]
+
+```
+
+
 Top 10% points
 ```{r echo = FALSE, eval=TRUE}
 summary(df_osm_edge$points)
-quantile(df_osm_edge$points, 0.9)
+quantile(df_osm_edge$points, 0.90)
 
-#filter(df_osm_edge, points > quantile(df_osm_edge$points, 0.9)) %>% 
-#  ggplot(aes(points)) +
-#  geom_histogram()
-
+filter(df_osm_edge, points > quantile(df_osm_edge$points, 0.90) ) %>% 
+  ggplot(aes(points)) +
+  geom_histogram() 
+  
+  
 ```
 
 ## ECDF 
 
 ```{r echo = FALSE, eval = FALSE}
 
-list_osm_edge <- df_osm_edge[, 1]
 fun.ecdf <- ecdf(df_osm_edge$points)
 
 my.ecdf <- fun.ecdf(sort(df_osm_edge$points))
@@ -66,6 +107,19 @@ tail(my_ecdf_df, 400)
 #plot(P, log="x", xlim=c(1, max(df_osm_edge$points)))
 ```
 
+```{r}
+# Classifying points by day for ECDF 
+df_intersession_april <-mutate(df_intersession_april, class = ifelse(hour(time) >7 & hour(time) < 20, 
+                        "day",
+                        "night"))
+
+df_osm_edge <- df_intersession_april %>% 
+  merge( y = df_osm_edge, by = "way_id") 
+
+ggplot(df_osm_edge, aes(points, color= class)) + 
+  scale_x_log10() + stat_ecdf(geom = "step")
+```
+
 ECDF all by #points 
 ```{r  echo = FALSE, eval = TRUE }
 
@@ -73,12 +127,13 @@ ecdf_all <- ggplot(df_osm_edge, aes(points)) +
   scale_x_log10() + stat_ecdf(geom = "step")
 
 ecdf_day<- ggplot(df_osm_edge, aes(points)) + 
-  scale_x_log10() + stat_ecdf(geom = "step")
+  scale_x_log10() + stat_ecdf(geom = "step") + title("ECDF day")
 
 ecdf_night <- ggplot(df_osm_edge, aes(points)) + 
-  scale_x_log10() + stat_ecdf(geom = "step")
+  scale_x_log10() + stat_ecdf(geom = "step") + title("ECDF night")
 
 grid.arrange(ecdf_all,ecdf_day,ecdf_night,  ncol=3)
+
 ```
 
 ```{r}
@@ -104,6 +159,9 @@ df_intersession_april %>%
 # Creating the empty map of Porto
 
 #Points
+#boxplot(df_osm_edge$points)
+
+feup <- quantile(df_osm_edge$points, 0.95)
 superior <- quantile(df_osm_edge$points, 0.9)
 medio <- quantile(df_osm_edge$points, 0.7)
 low <- quantile(df_osm_edge$points, 0.5) 
@@ -149,10 +207,14 @@ for(way_id in list_osm_edge) {
     
     # Deciding the color of the point.
 
-    if(df_osm_edge[counter, 2] > superior) {
+    if(df_osm_edge[counter, 2] > feup) {
           
-          m <- addPolylines(m, lons, lats, color='red')
+          m <- addPolylines(m, lons, lats, color='blue')
+        
+        } else if (df_osm_edge[counter, 2] >= superior && df_osm_edge[counter, 2] <= feup) {
           
+          m <- addPolylines(m, lons, lats, color='red')  
+        
         } else if (df_osm_edge[counter, 2] >= medio && df_osm_edge[counter, 2] <= superior) {
           
           m <- addPolylines(m, lons, lats, color='yellow')
@@ -172,23 +234,44 @@ for(way_id in list_osm_edge) {
     }
 
 ```
+### Showing maps 
 
 Traffic  Map April 2016
 ```{r eval= TRUE}
 # Showing Map.
 m 
+#mapshot(m, url = paste0(getwd(), "/map.html"))
 ```
+
 Traffic day Map April 2016
-```{r}
-#m_day <- m 
+```{r echo=FALSE}
+m_day <- m
 m_day
 ```
 
 Traffic night Map April 2016
-```{r }
-#m_night <- m
+```{r echo=FALSE}
+m_night <- m
 m_night
+```
 
+Map Intersession time all 1.30h.
+```{r echo=FALSE}
+m_itm <- m
+m_itm
+```
+
+Map Intersession time (<1.3h) day.
+```{r}
+m_itm_day <- m
+m_itm_day
+#mapshot(m_night_semsessions, file = "~/maps/top_intersessions_night_april.png")
+```
+Map Intersession time (<2h)night.
+```{r}
+m_itm_night <- m
+m_itm_night
+#mapshot(m, file = "~/maps/_all_april.png")
 ```
 
 
@@ -207,37 +290,55 @@ df_intersession_april <- df_intersession_april  %>%
 # df_intersession_april$min <- NULL 
 ```
 
-```{r}
+Intersession time  
+```{r echo=FALSE}
 summary(df_intersession_april$intersession_time)
 
 df_intersession_april %>% 
-  filter(intersession_time > 15) %>% 
-  ggplot(aes(intersession_time)) + 
-  geom_histogram()
+  filter(intersession_time > 0) %>% 
+  ggplot(aes(intersession_time/60)) + 
+  geom_histogram() + 
+  xlab("Intersession time (hours)") + 
+  scale_x_continuous(breaks = seq(0,200,20))
 ```
 
 
 ### ECDF 
 ```{r echo=FALSE}
 e1 <- ggplot(subset(df_intersession_april, intersession_time > 0), aes(intersession_time)) + 
-  stat_ecdf(geom = "step")
+  stat_ecdf(geom = "step") +  xlab("Intersession time")
 
 e2 <- ggplot(subset(df_intersession_april, intersession_time > 0), aes(intersession_time)) + 
-  scale_x_log10() +stat_ecdf(geom = "step") 
+  scale_x_log10() +stat_ecdf(geom = "step")  + xlab("Intersession time Log")
 
 grid.arrange(e1, e2, ncol= 2)
 ```
 
 
-Lowest 10% 
+### Lowest 35% 
 
 
 ```{r echo=FALSE, eval=TRUE}
-subset(df_intersession_april, intersession_time > quantile(df_intersession_april$intersession_time, 0.1)) %>% 
+subset(df_intersession_april, intersession_time < quantile(df_intersession_april$intersession_time, 0.35)) %>% 
   ggplot(aes(intersession_time)) +
-  geom_histogram(binwidth = 1000) + 
-  scale_x_continuous(breaks = seq(0,20000,5000))
+  geom_histogram(bins = 10) + 
+  scale_x_continuous(breaks = seq(0,200,15))+
+  xlab("Intersession time (mins)")
 ```
+
+
+```{r}
+df_intersession_april %>% 
+  filter(intersession_time > 0) %>% 
+  group_by(way_id) %>% 
+  summarise(median_itm = median(intersession_time), n_session = n()+1) %>% 
+  filter(median_itm < 130) %>% 
+  ggplot(aes(median_itm)) + 
+  geom_histogram(bins = 30) + 
+  scale_x_continuous(breaks = seq(0,150,5))
+
+```
+
 
 ## By date 
 
@@ -260,6 +361,7 @@ df_intersession_april %>%
   scale_x_continuous(breaks = seq(1,30,1))
 
 ```
+
 ```{r echo= FALSE} 
 df_intersession_april %>% 
   group_by(hour =hour(time)) %>% 
@@ -269,3 +371,74 @@ df_intersession_april %>%
   scale_x_continuous(breaks = seq(0,23,1))
 
 ```
+
+## Speeds 
+
+```{r}
+# Speed by way_id and session.\
+avg_speed_wayid <- df_speed %>% 
+  group_by(way_id) %>% 
+  summarise(avg_speed = mean((speed*18)/5), n = n() )
+
+ggplot(avg_speed_wayid, aes(avg_speed)) +
+  geom_histogram(binwidth = 5) + 
+  scale_x_continuous(name = "Avg_speed(m/s)",  breaks = seq(0, 150, 10) )
+```
+
+Speed by week 
+```{r echo=FALSE}
+df_speed %>% 
+group_by(weekday =wday(time)) %>% 
+  summarise(avg_speed = mean((speed*18)/5)) %>% 
+  ggplot(aes(weekday, avg_speed)) + 
+  geom_line() +
+  scale_x_continuous(breaks = seq(0,7,1))+
+  ylab("Avg speed km/h")
+```
+
+Speed by day
+
+```{r echo=FALSE}
+df_speed %>% 
+  group_by(day =day(time)) %>% 
+  summarise(avg_speed = mean((speed*18)/5)) %>% 
+  ggplot(aes(day, avg_speed)) + 
+  geom_line() +
+  scale_x_continuous(breaks = seq(0,30,1))+
+  ylab("Avg speed km/h")
+```
+
+Speed by hour
+```{r echo=FALSE}
+df_speed %>% 
+  group_by(hour =hour(time)) %>% 
+  summarise(avg_speed = mean((speed*18)/5)) %>% 
+  ggplot(aes(hour, avg_speed)) + 
+  geom_line() +
+  scale_x_continuous(breaks = seq(0,23,1))+
+  ylab("Avg speed km/h")
+```
+
+Number of session per hour
+```{r echo=FALSE}
+df_speed %>% 
+    group_by(hour =hour(time)) %>% 
+    summarise(sessions = n_distinct(session_id)) %>% 
+  ggplot(aes(hour, sessions)) + 
+  geom_line()+
+  scale_x_continuous(breaks = seq(0,23,1))
+```
+
+Ways_ids per half hour
+```{r}
+prueba <- table(cut(df_speed$time, breaks = "30 mins"))
+plot(prueba, xlab = "date", ylab = "frequency")
+```
+
+
+
+
+
+
+
+
