@@ -34,11 +34,16 @@ if(! "gridExtra" %in% rownames(installed.packages())){
   install.packages("gridExtra")
 }
 
+if(! "plotly" %in% rownames(installed.packages())){
+  install.packages("plotly")
+}
+
 library(gridExtra)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
-library(xlsx)
+library(plotly)
+#library(xlsx)
 #library(magrittr)
 #library(lattice)
 #library(latticeExtra)
@@ -434,14 +439,14 @@ All
 ```{r}
 df_points_edge_cars_april16 <- data.frame()
 df_points_edge_cars_april16 <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
-                                       FROM sensemyfeup_raw.osmlocation as osm 
-                                          INNER JOIN danielasocas.segments_travelmode as segments 
-                                            USING (session_id)
-                                          INNER JOIN sensemyfeup_raw.session_offsets 
-                                            USING (session_id)
-                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
-                                            (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND 
-                                            EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016
+                                       FROM segments_vehicules_april as segments
+                                       INNER JOIN sensemyfeup_raw.gslocation as gs
+                                         USING (session_id)
+                                       INNER JOIN sensemyfeup_raw.osmlocation as osm
+                                         USING (session_id)
+                                       WHERE (osm.seconds between segments.seconds_start AND segments.seconds_end) AND
+gs.seconds = osm.seconds AND gs.millis = osm.millis AND 
+(alt != 0  OR  track != 0)
                                        GROUP BY way_id
                                        ORDER BY points DESC")
 
@@ -453,14 +458,13 @@ Day time
 df_points_edge_cars_april16_day <- data.frame()
 df_points_edge_cars_april16_day <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
                                        FROM sensemyfeup_raw.osmlocation as osm 
-                                          INNER JOIN danielasocas.segments_travelmode as segments 
+                                          INNER JOIN danielasocas.segments_vehicules_april as segments 
                                             USING (session_id)
-                                          INNER JOIN sensemyfeup_raw.session_offsets 
-                                            USING (session_id)
-                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
-                                            (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND 
-                                            EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016 AND
-EXTRACT(HOUR from time_start) >= 7 AND EXTRACT(HOUR from time_start) < 20
+INNER JOIN sensemyfeup_raw.gslocation as gs
+                                USING (session_id)
+                                       WHERE (osm.seconds  BETWEEN segments.seconds_start AND seconds_end) AND 
+(alt != 0  OR  track != 0)  AND
+EXTRACT(HOUR from time_start) BETWEEN 7 and 20
                                        GROUP BY way_id
                                        ORDER BY points DESC")
 
@@ -472,14 +476,13 @@ Night time
 df_points_edge_cars_april16_night <- data.frame()
 df_points_edge_cars_april16_night <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
                                        FROM sensemyfeup_raw.osmlocation as osm 
-                                          INNER JOIN danielasocas.segments_travelmode as segments 
+                                          INNER JOIN danielasocas.segments_vehicules_april as segments 
                                             USING (session_id)
-                                          INNER JOIN sensemyfeup_raw.session_offsets 
-                                            USING (session_id)
-                                       WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
-                                            (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND 
-                                            EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016 AND
-EXTRACT(HOUR from time_start) >= 20 OR EXTRACT(HOUR from time_start) < 7
+INNER JOIN sensemyfeup_raw.gslocation as gs
+                                USING (session_id)
+                                       WHERE (osm.seconds  BETWEEN segments.seconds_start AND seconds_end) AND 
+EXTRACT(HOUR from time_start) > 20 OR EXTRACT(HOUR from time_start) < 7 AND 
+(alt != 0  OR  track != 0)
                                        GROUP BY way_id
                                        ORDER BY points DESC")
 
@@ -490,7 +493,7 @@ save(df_points_edge_cars_april16_night, file="df_points_edge_cars_april16_night.
 ### Just first session, April16 
 ```{r echo=FALSE, eval=FALSE}
 df_first_session_cars_april16 <- data.frame()
-df_first_session_cars_april16 <- dbGetQuery(con, "SELECT distinct on (session_id) session_id, time_start,time_end
+df_first_session_cars_april16 <- dbGetQuery(con, "SELECT distinct on (session_id) as session_id, time_start,time_end
                                           FROM danielasocas.segments_travelmode AS segments
                                           WHERE (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND
                                           EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016
@@ -503,25 +506,27 @@ save(df_first_session_cars_april16, file="df_first_session_cars_april16.Rda")
 
 ```{r}
 
-df_intersession_april <- data.frame()
-df_intersession_april <- dbGetQuery(con, "SELECT session_id, way_id, MIN(seconds) as seconds
+#Not anymore
+
+df_intersession_april_gs <- data.frame()
+df_intersession_april_gs <- dbGetQuery(con, "SELECT session_id, way_id, MIN(osm.seconds) as seconds
                                                   FROM sensemyfeup_raw.osmlocation AS osm
                                                   INNER JOIN danielasocas.segments_vehicules_april AS segments
 	                                                  USING (session_id)
                                                   INNER JOIN sensemyfeup_raw.session_offsets 
 	                                                  USING (session_id)
-                                                  WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end)
+INNER JOIN sensemyfeup_raw.gslocation as gs
+                                USING (session_id)
+                                                  WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
+(alt != 0  OR  track != 0)
                                                   GROUP BY way_id, session_id
                                                   ORDER BY way_id")
 
-save(df_intersession_april, file="df_intersession_april.Rda")
+save(df_intersession_april_gs, file="df_intersession_april_gs.Rda")
 
 ```
 
 ### Speed
-
-
-
 
 ```{r}
 
