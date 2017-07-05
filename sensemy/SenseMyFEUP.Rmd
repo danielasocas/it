@@ -22,9 +22,9 @@ if(! "tidyr" %in% rownames(installed.packages())){
   install.packages("tidyr")
 }
 
-if(! "xlsx" %in% rownames(installed.packages())){
-  install.packages("xlsx")
-}
+#if(! "xlsx" %in% rownames(installed.packages())){
+#  install.packages("xlsx")
+#}
 
 if(! "magrittr" %in% rownames(installed.packages())){
   install.packages("magrittr")
@@ -71,18 +71,18 @@ if(! "leaflet" %in% rownames(installed.packages())){
 }
 
 
-if(! "sp" %in% rownames(installed.packages())){
-  install.packages("sp")
-  library(sp)
-}
+#if(! "sp" %in% rownames(installed.packages())){
+#  install.packages("sp")
+# library(sp)
+#}
 
-if(! "mapview" %in% rownames(installed.packages())){
-  install.packages("mapview",dependencies = TRUE)
-  library(mapview)
-}
+#if(! "mapview" %in% rownames(installed.packages())){
+#  install.packages("mapview",dependencies = TRUE)
+#  library(mapview)
+#}
 
 library(htmlwidgets)
-library(mapview)
+#library(mapview)
 library(leaflet)
 ```
 
@@ -251,7 +251,7 @@ prt <- 1
 set.seed(4218)
 sp <- sample(1:nrow(df_osm_edge), as.integer(prt * nrow(df_osm_edge)))
 
-list_osm_edge <- df_osm_edge[sp, 1]
+list_osm_edge <- df_osm_edge[, 1]
 fun.ecdf <- ecdf(df_osm_edge$points)
 
 my.ecdf <- fun.ecdf(sort(df_osm_edge$points))
@@ -328,6 +328,10 @@ superior <- quantile(df_osm_edge$points, 0.9)
 medio <- quantile(df_osm_edge$points, 0.7)
 low <- quantile(df_osm_edge$points, 0.5) 
 
+superior <- 8045
+medio <- 3214
+low <- 1558
+  
 #Sessions 
 #superior <- quantile(df_osm_edge$sessions, 0.9)
 #medio <- quantile(df_osm_edge$sessions, 0.7)
@@ -359,6 +363,7 @@ for(way_id in list_osm_edge) {
   lons <- c()
   lats <- c()
   
+  print(length(parsed_line))
   if(length(parsed_line) != 0) {
     
     #Defining lons and lats as variables to use later.
@@ -394,7 +399,11 @@ for(way_id in list_osm_edge) {
         }
         
         counter <- counter + 1 
-        
+        print("hey")
+        print(counter)
+        print(df_osm_edge[counter, 2])
+        print(way_id)
+        print(length(parsed_line))
       }
       
       #print(line)
@@ -433,6 +442,24 @@ dbDisconnect(con)
 # PART II: only data of April 2016.
 
 ## Getting data from database.
+
+Df with all filters
+
+```{r}
+df_wayids_porto_april <- data.frame()
+df_wayids_porto_april <- dbGetQuery(con, "SELECT session_id, segment_id, way_id, osm.seconds, osm.lat, osm.lon, gs.speed
+                            FROM segments_vehicules_april as segments
+                              INNER JOIN sensemyfeup_raw.gslocation as gs
+                                USING (session_id)
+                              INNER JOIN sensemyfeup_raw.osmlocation as osm
+                                USING (session_id)
+                            WHERE (osm.seconds between segments.seconds_start AND segments.seconds_end) AND
+gs.seconds = osm.seconds AND gs.millis = osm.millis AND 
+(alt != 0  OR  track != 0)")
+
+save(df_wayids_porto_april, file="df_wayids_porto_april.Rda")
+```
+
 
 ### Points April16
 All

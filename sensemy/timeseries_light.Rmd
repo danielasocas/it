@@ -1,0 +1,31 @@
+---
+title: "Time series light top way_ids"
+output: html_notebook
+---
+
+```{r echo=FALSE}
+m_top50 <- m
+m_top50
+```
+
+```{r echo=FALSE, message=FALSE}
+tseries_light <- function(index) { df_superhotedges_april16pt %>% 
+  filter( way_id == list_osm_edge[index] ) %>% 
+  ggplot(aes(x= time, y= (speed*18)/5)) + 
+  geom_point(aes(colour = class), alpha = 1/10) + 
+  ylab("Speed(km/h)") + 
+  xlab("Date")+ 
+  ggtitle(paste("Time series of speed for way_id",list_osm_edge[index], sep = " " ))}
+
+
+```
+
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_light)
+```
+
+```{r}
+lapply(1:12, FUN = tseries_avg)
+```
+
+
