@@ -25,7 +25,6 @@ df_superhotedges_april16pt %>%
 #######################################################################
 
 # Light, its fast. 
-
 tseries_light <- function(index) { df_superhotedges_april16pt %>% 
     filter( way_id == list_osm_edge[index], speed > 0 ) %>% 
     ggplot(aes(x= time, y= (speed*18)/5)) + 
@@ -37,17 +36,34 @@ tseries_light <- function(index) { df_superhotedges_april16pt %>%
 #lapply(1:2, FUN = tseries_light)
 
 # Timeseries mean per day. 
-
-tseries_avg <- function(index) { df_superhotedges_april16pt %>% 
+tseries_avg_d <- function(index) { df_superhotedges_april16pt %>% 
     filter( way_id == list_osm_edge[index], speed > 0 ) %>% 
     group_by(day = day(time)) %>% 
     summarise(speed = mean(speed)) %>% 
-    plot_ly(x= ~day, y= ~(speed*18)/5, type = 'scatter', mode = 'lines') %>% 
+    plot_ly(x= ~day, y= ~(speed*18)/5, type = 'scatter', mode = 'lines+markers') %>% 
     layout(title = paste("Time series of avg speed per day for way_id",list_osm_edge[index], sep = " " ),
            yaxis = list(title="Speed (km/h)"),
-           xaxis = list(title="Date"))}
+           xaxis = list(title="Day"))}
 
-lapply(1:3, FUN = tseries_avg)
+# Timeseries mean per week. 
+tseries_avg_w <- function(index) { df_superhotedges_april16pt %>% 
+    filter( way_id == list_osm_edge[index], speed > 0 ) %>% 
+    group_by(wday = wday(time, label = TRUE)) %>% 
+    summarise(speed = mean(speed)) %>% 
+    plot_ly(x= ~wday, y= ~(speed*18)/5, type = 'scatter', mode = 'lines+markers') %>% 
+    layout(title = paste("Time series of avg speed per day of the week for way_id",list_osm_edge[index], sep = " " ),
+           yaxis = list(title="Speed (km/h)"),
+           xaxis = list(title="Day of the week"))}
+
+# Timeseries mean per hour. 
+tseries_avg_h <- function(index) { df_superhotedges_april16pt %>% 
+    filter( way_id == list_osm_edge[index], speed > 0 ) %>% 
+    group_by(hour = hour(time)) %>% 
+    summarise(speed = mean(speed)) %>% 
+    plot_ly(x= ~hour, y= ~(speed*18)/5, type = 'scatter', mode = 'lines+markers') %>% 
+    layout(title = paste("Time series of avg speed per hour for way_id",list_osm_edge[index], sep = " " ),
+           yaxis = list(title="Speed (km/h)"),
+           xaxis = list(title="Hour"))}
 
 #---------------------------
 # Not

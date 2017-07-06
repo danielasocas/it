@@ -20,12 +20,25 @@ tseries_light <- function(index) { df_superhotedges_april16pt %>%
 
 ```
 
-```{r echo=FALSE, message=FALSE}
+```{r echo=FALSE}
 lapply(1:12, FUN = tseries_light)
 ```
 
-```{r}
-lapply(1:12, FUN = tseries_avg)
+## Timeseries average 
+
+### Per week. 
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_avg_w)
+```
+
+### Per hour. 
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_avg_h)
+```
+
+### Per day.
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_avg_d)
 ```
 
 
