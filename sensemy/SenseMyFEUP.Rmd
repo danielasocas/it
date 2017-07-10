@@ -82,7 +82,7 @@ if(! "leaflet" %in% rownames(installed.packages())){
 #}
 
 library(htmlwidgets)
-#library(mapview)
+library(mapview)
 library(leaflet)
 ```
 
@@ -133,7 +133,8 @@ con_osm <- dbConnect(drv, dbname = "openstreetmap",
 
 ## General EDA.
 ### Getting data. 
-```{r}
+
+```{r echo= FALSE}
 df_segments_length <- data.frame()
 df_segments_length_tm <- dbGetQuery(con, "SELECT session_id, SUM(length) as distance, travelmode
                                       FROM danielasocas.segments_travelmode as segments 
@@ -144,9 +145,10 @@ df_segments_length <- dbGetQuery(con, "SELECT session_id, SUM(length) as distanc
                                       FROM danielasocas.segments_travelmode as segments 
                                       WHERE segments.travelmode = 'car' OR segments.travelmode = 'bus'
                                       GROUP BY session_id")
+
 ```
 
-```{r}
+```{r echo= FALSE}
 df_segments <- subset(df_segments_length, distance < IQR(distance,0.75) )
 
 ggplot(df_segments, aes(distance)) +
@@ -163,7 +165,7 @@ ggplot(df_segments, aes(travelmode, distance, color = travelmode)) +
 ```
 
 
-```{r}
+```{r echo= FALSE}
 df_segments_timestamp <- data.frame()
 df_segments_timestamp <- dbGetQuery(con, "SELECT session_id, time_start,time_end, length, travelmode
                                       FROM danielasocas.segments_travelmode as segments
@@ -171,9 +173,6 @@ df_segments_timestamp <- dbGetQuery(con, "SELECT session_id, time_start,time_end
 ```
 
 
-```{r}
-
-```
 
 ## Getting data per edge.
 

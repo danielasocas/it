@@ -24,7 +24,32 @@ tseries_light <- function(index) { df_superhotedges_april16pt %>%
 lapply(1:12, FUN = tseries_light)
 ```
 
-## Timeseries average 
+#Timeseries 
+
+## Speed  
+```{r}
+#Boxplots all 
+df_superhotedges_april16pt %>% 
+  filter(speed > 0) %>% 
+  group_by(hour = hour(time)) %>% 
+  plot_ly(x= ~hour, y= ~(speed*18)/5, type = 'box',boxpoints = FALSE) %>% 
+  layout(title = paste("Avg speed per hour" ),
+         yaxis = list(title="Speed (km/h)"),
+         xaxis = list(title="Hour"))
+```
+
+## All timeseries per way_id
+
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries)
+```
+
+
+### Timeseries speed average per way_id
+
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_speed)
+```
 
 ### Per week. 
 ```{r echo=FALSE, message=FALSE}
@@ -39,6 +64,22 @@ lapply(1:12, FUN = tseries_avg_h)
 ### Per day.
 ```{r echo=FALSE, message=FALSE}
 lapply(1:12, FUN = tseries_avg_d)
+```
+
+
+
+
+## Number of sessions 
+### Timeseries speed average per way_id
+
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_nsession)
+```
+
+## Intersession time 
+
+```{r}
+lapply(1:12, FUN = inter_h)
 ```
 
 
