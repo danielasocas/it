@@ -44,8 +44,25 @@ df_superhotedges_april16pt %>%
 lapply(1:12, FUN = tseries)
 ```
 
+## Boxplot intersession time  
+```{r}
+#Boxplots all 
+df_intersession_april16pt %>%
+  subset(way_id %in% df_superhotedges_april16pt$way_id) %>% 
+  ggplot(aes(factor(way_id), intersession_time)) +
+  geom_boxplot() +
+  coord_cartesian(ylim= c(0,250))+
+  ggtitle(label = "Intersession time top 12 edges") + 
+  xlab("") + 
+  ylab("Time (min)") +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=0.5))
+  
 
-### Timeseries speed average per way_id
+```
+
+# Individual plots
+
+## Timeseries speed average per way_id
 
 ```{r echo=FALSE, message=FALSE}
 lapply(1:12, FUN = tseries_speed)
@@ -76,10 +93,57 @@ lapply(1:12, FUN = tseries_avg_d)
 lapply(1:12, FUN = tseries_nsession)
 ```
 
+
 ## Intersession time 
 
 ```{r}
 lapply(1:12, FUN = inter_h)
 ```
+
+
+
+
+
+
+
+## Avg speed different.
+
+```{r echo=FALSE}
+lapply(1:12, FUN = newspeed_avg)
+```
+
+
+## Standard deviation day and hour
+
+```{r echo=FALSE}
+lapply(1:12, FUN = sd_day_h)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

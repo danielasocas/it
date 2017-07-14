@@ -81,8 +81,8 @@ if(! "leaflet" %in% rownames(installed.packages())){
 #  library(mapview)
 #}
 
-library(htmlwidgets)
-library(mapview)
+#library(htmlwidgets)
+#library(mapview)
 library(leaflet)
 ```
 
@@ -438,9 +438,10 @@ dbDisconnect(con)
 
 
 
-# PART II: only data of April 2016.
 
+# PART II: only data of April 2016.
 ## Getting data from database.
+
 
 Df with all filters
 
@@ -460,7 +461,7 @@ save(df_wayids_porto_april, file="df_wayids_porto_april.Rda")
 ```
 
 
-### Points April16
+## Points April16
 All
 ```{r}
 df_points_edge_cars_april16 <- data.frame()

@@ -20,7 +20,7 @@ V2 <- c("Rua da Igreja de Paranhos",
 
 df_osm_edge_ids <- data.frame(matrix(c(V1,V2), nrow = 12))
 df_osm_edge_ids <-data.frame(matrix(c(list_osm_edge,superhot_edges_names), nrow=12))
-colnames(df_osm_edge_ids) <- c("way_id", "address")
+colnames(superhot_edges_names) <- c("way_id", "address")
 
 #######################################################################
 #                    Individual plots                                 #
@@ -50,7 +50,7 @@ df_superhotedges_april16pt %>%
 df_superhotedges_april16pt %>% 
   filter(speed > 0) %>% 
   group_by(hour = hour(time)) %>% 
-  plot_ly(x= ~hour, y= ~(speed*18)/5, type = 'box',boxpoints = FALSE) %>% 
+  plot_ly(x= ~factor(hour), y= ~(speed*18)/5, type = 'box',boxpoints = FALSE) %>% 
   layout(title = paste("Avg speed per hour" ),
          yaxis = list(title="Speed (km/h)"),
          xaxis = list(title="Hour"))
@@ -97,7 +97,7 @@ tseries_avg_h <- function(index) { df_superhotedges_april16pt %>%
     filter( way_id == df_osm_edge_ids[index,1], speed > 0, wday(time) != 1 , wday(time) != 7  ) %>% 
     group_by(hour = hour(time)) %>% 
     summarise(speed = mean(speed)) %>% 
-    plot_ly(x= ~hour, y= ~(speed*18)/5, type = 'scatter', mode = 'lines+markers', name = "Speed per hour") %>%
+    plot_ly(x= ~factor(hour), y= ~(speed*18)/5, type = 'scatter', mode = 'lines+markers', name = "Speed per hour") %>%
     layout(title = paste("Avg speed per hour",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
            yaxis = list(title="Speed (km/h)"),
            xaxis = list(title="Hour without weekends"))}
@@ -145,7 +145,7 @@ tseries_nsessions_h <- function(index) { df_superhotedges_april16pt %>%
     filter(way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
     group_by(hour = hour(time)) %>% 
     summarise(sessions = n_distinct(session_id)) %>% 
-    plot_ly(x= ~hour, y= ~sessions, type = 'scatter', mode = 'lines+markers',name = "#sessions per hour") %>% 
+    plot_ly(x= ~factor(hour), y= ~sessions, type = 'scatter', mode = 'lines+markers',name = "#sessions per hour") %>% 
     layout(title = paste("",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
            yaxis = list(title="#sessions"),
            xaxis = list(title="Hour without weekends"))
@@ -175,7 +175,7 @@ tseries_nsessions_d <- function(index) { df_superhotedges_april16pt %>%
 #          Function all           #
 #---------------------------------#
 
-#Per Rua
+#Per edge
 
 tseries_nsession <- function(index) {
   m1 <- tseries_nsessions_h(index)
@@ -193,7 +193,7 @@ inter_h <- function(index) { df_intersession_april16pt %>%
     filter( way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
     group_by(hour = hour(time)) %>% 
     summarise(intersession_t = mean(intersession_time)) %>% 
-    plot_ly(x= ~hour, y= ~intersession_t, type = 'scatter', mode = 'lines+markers', name = "Intersession per day") %>% 
+    plot_ly(x= ~factor(hour), y= ~intersession_t, type = 'scatter', mode = 'lines+markers', name = "Intersession per day") %>% 
     layout(title = paste("",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
            yaxis = list(title="intersession time(min)"),
            xaxis = list(title="Hour"))}
@@ -207,7 +207,7 @@ inter_d <- function(index) { df_intersession_april16pt %>%
            yaxis = list(title="intersession time (min)"),
            xaxis = list(title="Day"))}
 
-#lapply(1:12, FUN = inter_h)
+lapply(1:12, FUN = inter_h)
 
 #########################   Altogether   ########################
 
@@ -226,11 +226,161 @@ tseries <- function(index) {
   
   i1 <- inter_h(index)
   i2 <- inter_d(index)
-  subplot(p1,m1,i1,p2,m2,p3,m3,i2,nrows = 6, shareY = T)
-}
+  subplot(p1,p2,p3,m1,m2,m3,i1,i2,nrows = 8, shareY = T) %>% 
+    layout(legend= list(orientation= 'h'))}
 
 lapply(1:2, FUN = tseries)
 
+#######################################################################
+#                    Speed different                                  #
+#######################################################################
+
+#Base 
+df_superhotedges_april16pt_speed_h <- df_superhotedges_april16pt %>% 
+  group_by(way_id, session_id, hour(time)) %>% 
+  summarise(median_speed = median(speed*18/5), avg_speed = mean(speed*18/5)) 
+  
+newspeed_avg_h <- function(index) 
+  
+df_superhotedges_april16pt_speed %>% 
+    group_by(way_id) %>% 
+    summarise(speed = mean(avg_speed), median_speed = mean(median_speed)) %>% 
+    plot_ly(x= ~factor(way_id), y= ~speed, type = 'scatter', mode = 'lines+markers',name = "Average") %>%
+    layout(title = "New Avg speed per edge",
+           yaxis = list(title="Speed (km/h)"),
+           xaxis = list(title="Way_id")) %>% 
+    add_trace(x= ~factor(way_id), y= ~median_speed, type = 'scatter', mode = 'lines+markers', name = "Median")
+
+
+# New speed per hour. 
+newspeed_avg_h <- function(index) { df_superhotedges_april16pt %>% 
+    filter( way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+    group_by(way_id, session_id, hour = hour(time)) %>% 
+    summarise(median_speed = median(speed*18/5), avg_speed = mean(speed*18/5)) %>% 
+    plot_ly(x= ~factor(hour), y= ~avg_speed, type = 'box', name = "Avg speed per hour") %>%
+    layout(title = paste("Avg speed per hour",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
+           yaxis = list(title="Speed (km/h)", range(0,100)),
+           xaxis = list(title="Hour without weekends", range(0,24))) %>% 
+    add_trace( y= ~mean(avg_speed)) 
+}
+
+lapply(1:2, FUN = newspeed_avg_h)
+
+# New speed per week. 
+newspeed_avg_wd <- function(index) { df_superhotedges_april16pt %>% 
+    filter( way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+    group_by(way_id, session_id, wday = wday(time, label = T)) %>% 
+    summarise(median_speed = median(speed*18/5), avg_speed = mean(speed*18/5)) %>% 
+    plot_ly(x= ~factor(wday), y= ~avg_speed, type = 'box', name = "Avg speed day of the week") %>%
+    layout(title = paste("Avg speed per day of the week:",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
+           yaxis = list(title="Speed (km/h)"),
+           xaxis = list(title="Day of the week"))}
+
+lapply(1:2, FUN = newspeed_avg_wd)
+
+# New speed per day. 
+newspeed_avg_d <- function(index) { df_superhotedges_april16pt %>% 
+    filter( way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+    group_by(way_id, session_id, day = day(time)) %>% 
+    summarise(median_speed = median(speed*18/5), avg_speed = mean(speed*18/5)) %>% 
+    plot_ly(x= ~factor(day), y= ~avg_speed, type = 'box', name = "Avg speed day April16") %>%
+    layout(title = paste("",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
+           yaxis = list(title="Speed (km/h)"),
+           xaxis = list(title="Day"))} %>% 
+  add_trace( y= ~mean(avg_speed)) 
+
+lapply(1:2, FUN = newspeed_avg)
+
+#---------------------------------#
+#          Function all           #
+#---------------------------------#
+
+#Per edge
+
+newspeed_avg <- function(index) {
+  n1 <- newspeed_avg_h(index)
+  n2 <- newspeed_avg_wd(index) 
+  n3 <- newspeed_avg_d(index)
+  subplot(n1,n2,n3,nrows = 3, shareY = T)%>% 
+    layout(legend= list(orientation= 'h'))
+}
+
+lapply(1, FUN = newspeed_avg)
+
+#######################################################################
+#                     more plots                            #
+#######################################################################
+
+ 
+#--- Avg speed / Frequency
+df_superhotedges_april16pt %>%
+    filter( way_id == df_osm_edge_ids[5,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+    group_by(way_id, session_id) %>% 
+    summarise(median_speed = median(speed*18/5), avg_speed = mean(speed*18/5)) %>% 
+    plot_ly( x= ~avg_speed, type = 'histogram', name = "Avg speed April16") %>%
+    layout(title = paste("",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
+           xaxis = list(title="Speed (km/h)"),
+           yaxis = list(title="Frequency")) 
+  
+
+#------------------ Avg speed / #sd
+##--- Per session
+sd_session <- function(index) {  df_superhotedges_april16pt %>% 
+  filter( way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id, session_id, hour = hour(time)) %>% 
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  plot_ly( x= ~avg_speed, y= ~sd,color = ~hour, type= 'scatter' , name = "Avg speed April16") %>%
+  layout(title = paste("",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
+         xaxis = list(title="Speed (km/h)"),
+         yaxis = list(title="Frequency"))
+}
+
+##--- Per hour
+sd_h <- function(index) {   df_superhotedges_april16pt %>% 
+  filter( way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id, hour = hour(time)) %>% 
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  plot_ly( x= ~avg_speed, y= ~sd, color = ~hour, type= 'scatter' , name = "Avg speed April16") %>%
+  layout(title = paste("",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
+         xaxis = list(title="Speed (km/h)"),
+         yaxis = list(title="Frequency"))
+}
+
+##--- Per day and hour
+sd_day_h <-  function(index) { df_superhotedges_april16pt %>% 
+  filter( way_id == df_osm_edge_ids[index,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id,day = day(time), hour = hour(time)) %>% 
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  plot_ly( x= ~avg_speed, y= ~sd,color = ~hour, type= 'scatter' , name = "Avg speed April16") %>%
+  layout(title = paste("",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ),
+         xaxis = list(title="Average Speed (km/h)"),
+         yaxis = list(title="Standard deviation"))
+}
+
+lapply(1, FUN = sd_day_h)
+
+#----------------Function all----------------#
+
+
+#Per edge
+
+sd <- function(index) {
+  n1 <- newspeed_avg_h(index)
+  n2 <- newspeed_avg_wd(index) 
+  n3 <- newspeed_avg_d(index)
+  subplot(n1,n2,n3,nrows = 3, shareY = T)%>% 
+    layout(legend= list(orientation= 'h'))
+}
+
+lapply(1, FUN = newspeed_avg)
+
+
+#--- Avg speed / #sessions
+df_superhotedges_april16pt %>% 
+  filter( way_id == df_osm_edge_ids[5,1], wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id, session_id, hour = hour(time)) %>% 
+  summarise(median_speed = median(speed*18/5), avg_speed = mean(speed*18/5)) %>% 
+  plot_ly(x = ~avg_speed, type = 'histogram', name = "Avg speed April16") 
 
 
 #######################################################################
