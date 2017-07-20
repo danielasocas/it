@@ -1,6 +1,8 @@
 ---
-title: "Time series light top way_ids"
-output: html_notebook
+title: "Analysis top way_ids 12"
+output: 
+  html_notebook:
+    toc: true
 ---
 
 ```{r echo=FALSE}
@@ -17,7 +19,6 @@ tseries_light <- function(index) { df_superhotedges_april16pt %>%
   xlab("Date")+ 
   ggtitle(paste("Time series of speed for way_id",list_osm_edge[index], sep = " " ))}
 
-
 ```
 
 ```{r echo=FALSE}
@@ -27,39 +28,37 @@ lapply(1:12, FUN = tseries_light)
 #Timeseries 
 
 ## Speed  
-```{r}
+```{r echo=FALSE}
 #Boxplots all 
 df_superhotedges_april16pt %>% 
-  filter(speed > 0) %>% 
+  filter(speed > 0, wday(time) != 1 , wday(time) != 7 ) %>% 
   group_by(hour = hour(time)) %>% 
   plot_ly(x= ~hour, y= ~(speed*18)/5, type = 'box',boxpoints = FALSE) %>% 
-  layout(title = paste("Avg speed per hour" ),
+  layout(title = paste("Avg speed per hour (WW)" ),
          yaxis = list(title="Speed (km/h)"),
          xaxis = list(title="Hour"))
 ```
 
-## All timeseries per way_id
-
-```{r echo=FALSE, message=FALSE}
-lapply(1:12, FUN = tseries)
-```
 
 ## Boxplot intersession time  
-```{r}
+```{r echo=FALSE}
 #Boxplots all 
 df_intersession_april16pt %>%
   subset(way_id %in% df_superhotedges_april16pt$way_id) %>% 
-  ggplot(aes(factor(way_id), intersession_time)) +
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(factor(address), intersession_time)) +
   geom_boxplot() +
   coord_cartesian(ylim= c(0,250))+
   ggtitle(label = "Intersession time top 12 edges") + 
   xlab("") + 
   ylab("Time (min)") +
-  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=0.5))
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
   
 
 ```
 
+
+<!--
 # Individual plots
 
 ## Timeseries speed average per way_id
@@ -102,25 +101,114 @@ lapply(1:12, FUN = inter_h)
 
 
 
+-->
 
+## All speed timeseries per way_id
+Average of speed of every point.
 
+###Number of sessions 
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_nsession)
+```
 
+### Average speed
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries_speed)
+```
 
+###Intersession time
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lapply(1:12, FUN = tseries_inter)
+```
 ## Avg speed different.
 
-```{r echo=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 lapply(1:12, FUN = newspeed_avg)
 ```
 
+##Density lines average speed all together
 
-## Standard deviation day and hour
+```{r echo=FALSE}
+ggplotly(dens)
+```
+## Standard deviation
+### By hour
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id, hour = hour(time)) %>%
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(x=avg_speed, y=sd, color = hour)) +
+  geom_point() +
+  geom_smooth(aes(colour = avg_speed, fill = avg_speed)) +
+  facet_wrap(~ address) + 
+  ggtitle("By hour avg. speed April16")
+```
 
+### By day and hour
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id,day = day(time), hour = hour(time)) %>% 
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(x=avg_speed, y=sd, color = hour)) +
+  geom_point() +
+  geom_smooth(aes(colour = avg_speed, fill = avg_speed)) +
+  facet_wrap(~ address) + 
+  ggtitle("By day and hour avg.speed")
+```
+
+### By session 
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id, session_id, hour = hour(time)) %>% 
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(x=avg_speed, y=sd, color = hour)) +
+  geom_point() +
+  geom_smooth(aes(colour = avg_speed, fill = avg_speed)) +
+  facet_wrap(~ address) + 
+  ggtitle("By session per hour avg. speed April16")
+```
+
+##  Individual sd
+<!--
+
+### By hour
+```{r echo=FALSE}
+lapply(1:12, FUN = sd_h)
+```
+
+### By day and hour
 ```{r echo=FALSE}
 lapply(1:12, FUN = sd_day_h)
 ```
 
+### By session 
+```{r echo=FALSE}
+lapply(1:12, FUN = sd_session)
+```
+
+-->
 
 
+## Number of sessions per avg. speed by hour
+```{r echo=FALSE}
+lapply(1:12, FUN = speed_s)
+```
+
+
+<!--
+## All speed timeseries per way_id
+Average of speed of every point.
+
+```{r echo=FALSE, message=FALSE}
+lapply(1:12, FUN = tseries)
+```
+-->
 
 
 

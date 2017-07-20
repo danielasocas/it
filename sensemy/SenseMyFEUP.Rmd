@@ -98,9 +98,13 @@ library(lubridate)
 
 ```{r echo=FALSE, eval=FALSE}
 #Write Excel
-library(xlsx)
+
+install.packages("rJava")
+
 library(rJava)
 library(xlsxjars)
+library(xlsx)
+
 ```
 
 ## Connecting the database.
@@ -327,10 +331,6 @@ superior <- quantile(df_osm_edge$points, 0.9)
 medio <- quantile(df_osm_edge$points, 0.7)
 low <- quantile(df_osm_edge$points, 0.5) 
 
-superior <- 8045
-medio <- 3214
-low <- 1558
-  
 #Sessions 
 #superior <- quantile(df_osm_edge$sessions, 0.9)
 #medio <- quantile(df_osm_edge$sessions, 0.7)
@@ -420,7 +420,7 @@ m
 
 ```{r echo=FALSE}
 #Points
-write.xlsx(df_osm_edge, file="df_points_edge_osm.xlsx")
+write.xlsx(df_osm_edg, file="df_points_edge_osm.xlsx")
 
 #Sessions
 write.xlsx(df_osm_edge, file="df_sessions_edge_osm.xlsx")
