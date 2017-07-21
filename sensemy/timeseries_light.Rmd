@@ -1,25 +1,16 @@
 ---
-title: "Analysis top way_ids 12"
+title: "Analysis top 12 way_ids"
 output: 
   html_notebook:
-    toc: true
+  toc: true
 ---
-
+# Map wirh top edges.
+Blue > Red > Yellow > Green
 ```{r echo=FALSE}
-m_top50 <- m
+#m_top50 <- m
 m_top50
 ```
 
-```{r echo=FALSE, message=FALSE}
-tseries_light <- function(index) { df_superhotedges_april16pt %>% 
-  filter( way_id == list_osm_edge[index] ) %>% 
-  ggplot(aes(x= time, y= (speed*18)/5)) + 
-  geom_point(aes(colour = class), alpha = 1/10) + 
-  ylab("Speed(km/h)") + 
-  xlab("Date")+ 
-  ggtitle(paste("Time series of speed for way_id",list_osm_edge[index], sep = " " ))}
-
-```
 
 ```{r echo=FALSE}
 lapply(1:12, FUN = tseries_light)
