@@ -81,14 +81,14 @@ df_superhotedges_april16pt %>%
 
 
 #########################   Speed (Average of all points)   ########################
-# Light, its fast. 
+# Light, its fast. Shows every point with class time as color.  
 tseries_light <- function(index) { df_superhotedges_april16pt %>% 
     filter( way_id == df_osm_edge_ids[index,1] ) %>% 
     ggplot(aes(x= time, y= (speed*18)/5)) + 
     geom_point(aes(colour = class), alpha = 1/10) + 
     ylab("Speed(km/h)") + 
     xlab("Date")+ 
-    ggtitle(paste("Time series of speed:",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ))}
+    ggtitle(paste("Time series of speed for way_id:",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ))}
 
 #lapply(1:2, FUN = tseries_light)
 

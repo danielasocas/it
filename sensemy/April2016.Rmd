@@ -177,21 +177,6 @@ df_intersession_april16pt <- mutate(df_intersession_april16pt, class = ifelse(ho
 ```
 
 
-```{r echo=FALSE, eval=FALSE}
-#Necessary for mapping 
-
-#Reorder columns
-df_osm_edge <- df_points_hotedges_april16pt %>% 
-  select(way_id, points)
-
-df_osm_edge <- df_points_superhotedges_april16pt %>% 
-  select(way_id, points)
-
-#List before passing to map.
-list_osm_edge <- df_osm_edge[, 1]
-
-```
-
 ### ECDF 
 ```{r echo=FALSE}
 e1 <- ggplot(subset(df_intersession_april16pt, intersession_time > 0), aes(intersession_time)) + 
@@ -325,12 +310,32 @@ quantile(df_points_hotedges_april16pt$points, 0.90)
 ## Map points April 2016
 
 ```{r echo=FALSE, eval=FALSE}
+#Necessary for mapping 
+
+#Reorder columns
+df_osm_edge <- df_points_hotedges_april16pt %>% 
+  select(way_id, points)
+
+df_osm_edge <- df_points_superhotedges_april16pt %>% 
+  select(way_id, points)
+
+df_osm_edge <- df_points_superhotedges_april16pt %>% 
+  subset(way_id %in% df_osm_edge_ids$way_id) %>% 
+  select(way_id, points)
+
+
+#List before passing to map.
+list_osm_edge <- df_osm_edge[, 1]
+
+```
+
+```{r echo=FALSE, eval=FALSE}
 # Creating the empty map of Porto
 
 #Points
 #boxplot(df_osm_edge$points)
 
-feup <-   quantile(df_osm_edge$points, 0.9)
+feup <-   quantile(df_osm_edge$points, 0.90)
 superior <- quantile(df_osm_edge$points, 0.7)
 medio <- quantile(df_osm_edge$points, 0.5)
 low <- quantile(df_osm_edge$points, 0.5)
@@ -492,7 +497,7 @@ df_intersession_april16pt %>%
 
 ```
 
-#By hour 
+##By hour 
 ```{r echo= FALSE} 
 df_intersession_april16pt %>% 
   subset(way_id %in% df_hotedges_april16pt$way_id) %>% 

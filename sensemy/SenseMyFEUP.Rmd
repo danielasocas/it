@@ -461,6 +461,7 @@ save(df_wayids_porto_april, file="df_wayids_porto_april.Rda")
 ```
 
 
+
 ## Points April16
 All
 ```{r}
@@ -572,6 +573,20 @@ save(df_speed, file="df_speed.Rda")
 
 ```
 
+```{r}
+df_speed_top <- data.frame()
+df_speed_top <- dbGetQuery(con, "SELECT session_id, segment_id, way_id, osm.seconds, osm.lat, osm.lon, gs.speed, gs.track
+                            FROM segments_vehicules_april as segments
+                              INNER JOIN sensemyfeup_raw.gslocation as gs
+                                USING (session_id)
+                              INNER JOIN sensemyfeup_raw.osmlocation as osm
+                                USING (session_id)
+                            WHERE (osm.seconds between segments.seconds_start AND segments.seconds_end) AND
+gs.seconds = osm.seconds AND gs.millis = osm.millis AND 
+(alt != 0  OR  track != 0) AND (way_id = 35078500 OR way_id = 35145521 OR way_id = 316459169 OR way_id = 37141967 OR way_id = 63192525 OR way_id = 106334851 OR way_id = 37141970) ")
+
+save(df_speed_top, file="df_speed_top.Rda")
+```
 
 
 
