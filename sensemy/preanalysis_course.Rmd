@@ -3,44 +3,48 @@ title: "Pre Analysis top 7 edges: deciding the course."
 output: html_notebook
 ---
 
-#Setting dataframe. 
-```{r echo=FALSE}
-# Setting the dataframe. 
-
-df_superhotedges_april16pt <- df_speed_top_p
-
-df_superhotedges_april16pt$time <- as.POSIXct(df_superhotedges_april16pt$seconds, origin="1970-01-01")
-
-df_superhotedges_april16pt <- df_superhotedges_april16pt %>% 
-  filter(hour(time) >=8, hour(time)<= 20, wday(time) != 1 , wday(time) != 7 ) 
-
-df_superhotedges_april16pt$course <- factor(df_superhotedges_april16pt$course)
-
-#Create column day/night
-df$dayNight <- ifelse(df$DateTime > df$sunRise & df$DateTime < df$sunSet, 'day', 'night')
-```
-
-
-## Option 1 
+# Course of direction per edge.
 ```{r echo=FALSE}
 # Adding course to the top 7 edges. 
 
+ 
 df_speed_top$course <- 1
+intersection <- 41.17755
 
 #Vertical
-df_speed_top_p[(df_speed_top_p$way_id == 35145521 ) & df_speed_top_p$track > 90 & df_speed_top_p$track < 270,]$course <- 2
+#Rua Roberto Frias 1 & Eduardo Silva 1
+df_speed_top[((df_speed_top$way_id == 37141970 & df_speed_top$lat < intersection) | df_speed_top$way_id == 35145521 ) &
+                 (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median )) > 90 &
+                    (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median )) < 270,]$course <- 2
 
-df_speed_top_p[(df_speed_top_p$way_id == 37141970 | df_speed_top_p$way_id == 316459169) & (df_speed_top_p$track < 90 | df_speed_top_p$track > 270),]$course <- 2
-
+#Rua Roberto Frias 2 & Eduardo Silva 2
+df_speed_top[((df_speed_top$way_id == 37141970 & df_speed_top$lat > intersection) | df_speed_top$way_id == 316459169) & (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) < 90) | (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) > 270),]$course <- 2  
+               
 
 #Horizontals
-df_speed_top_p[(df_speed_top_p$way_id == 63192525 | df_speed_top_p$way_id == 106334851) &   df_speed_top_p$track < 180,]$course <- 2
-df_speed_top_p[df_speed_top_p$way_id == 35078500  &   df_speed_top_p$track > 180,]$course <- 2
+#Rua H. Sousa 1 & H. Sousa 2 
+df_speed_top[(df_speed_top$way_id == 63192525 | df_speed_top$way_id == 106334851) &   (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median )) < 180,]$course <- 2
 
+#Rua Manuel Silva. 
+df_speed_top[df_speed_top$way_id == 35078500  & (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) > 180),]$course <- 2
 
+# Rua de Frei 
+df_speed_top <- df_speed_top %>% 
+  mutate( heading = case_when((way_id == 37141970 | way_id == 35145521) &  course == 2 ~ "S", 
+                              (way_id == 37141970 | way_id == 35145521) &  course == 1 ~ "N",
+                              (way_id == 37141970.2 | way_id == 316459169) &  course == 2 ~ "N", 
+                              (way_id == 37141970.2 | way_id == 316459169) &  course == 1 ~ "S",
+                              (way_id == 63192525 | way_id == 106334851) &  course == 2 ~ "E", 
+                              (way_id == 63192525 | way_id == 106334851) &  course == 1 ~ "W",
+                              way_id == 35078500  &  course == 2 ~ "W", 
+                              way_id == 35078500  &  course == 1 ~ "E",
+                              way_id == 37141967  &  (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) > 180) ~ "W",
+                              way_id == 37141967  &  (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) < 180) ~ "E")) 
 
 ```
 
+
+#Analysis 
 
 ### All points. 
 ```{r echo=FALSE}
@@ -60,7 +64,7 @@ lapply(1, FUN = tseries_light2)
 df_superhotedges_april16pt %>% 
   group_by(way_id) %>% 
   ggplot(aes(x = hour(time), y= track)) +
-  geom_point(aes(colour = course), alpha = 1/20) +
+  geom_point(aes(colour = course), alpha = 1/100) +
   facet_wrap(~ way_id)
 ```
 
@@ -69,21 +73,15 @@ df_superhotedges_april16pt %>%
 ```{r}
  df_superhotedges_april16pt %>% 
     merge(y = df_osm_edge_ids , using = way_id) %>% 
-    ggplot(aes(x= track, fill = factor(way_id))) + 
+    ggplot(aes(x= track, fill = factor(address))) + 
     geom_histogram(binwidth = 45) +
     facet_wrap(~type) +
-    scale_x_continuous(breaks = seq(0,400,45))
+    scale_x_continuous(breaks = seq(0,400,45))+ 
+    ggtitle("Track histogram by type of street") 
 
 ```
 
 
-```{r echo=FALSE}
-df_superhotedges_april16pt %>% 
-    merge(y = df_osm_edge_ids , using = way_id) %>% 
-    ggplot(aes(x=hour(time) ,y= track)) + 
-    geom_point(aes(colour = factor(way_id)), alpha = 1/50) +
-    facet_wrap(~type) 
-```
 
 ```{r echo=FALSE}
 df_superhotedges_april16pt %>% 
@@ -99,7 +97,7 @@ dens2 <-df_superhotedges_april16pt %>%
   merge(y = df_osm_edge_ids, using = way_id) %>% 
   ggplot(aes(x= track)) +
   geom_density(aes(group=factor(address), color=address)) + 
-  ggtitle("Density of course grade(without weekends)") + 
+  ggtitle("Track density group by street type(WW)") + 
   xlab("Grades(º)") +
   ylab("Density") +
   facet_wrap(~type)
@@ -113,9 +111,9 @@ dens3 <-df_superhotedges_april16pt %>%
   ggplot(aes(x= track)) +
   scale_y_continuous(c(0,0.1))+
   geom_density(aes(group=factor(type), color=type)) + 
-  ggtitle("Density of course grade(without weekends)") + 
+  ggtitle("Track density  by hour (WW)") + 
   xlab("Grades(º)") +
-  ylab("Density") +
+  ylab("") +
   facet_wrap(~hour(time)) 
 
 ggplotly(dens3)  
@@ -126,10 +124,10 @@ dens_h <-  function(hr) {
 
 df_superhotedges_april16pt %>% 
   merge(y = df_osm_edge_ids, using = way_id) %>% 
-  filter(hour(time) == hr) %>% 
+  filter(hour(time) == hr, way_id != 316459169) %>% 
   ggplot(aes(x= track)) +
   geom_density(aes(group=factor(address), color=address)) + 
-  ggtitle("Density of course grade(without weekends)") + 
+  ggtitle("Density of course grade(WW)") + 
   xlab("Grades(º)") +
   ylab("Density") 
 
@@ -140,20 +138,12 @@ lapply(8, FUN = dens_h)
 
 
 ```{r}
-df_superhotedges_april16pt %>% 
-  filter(way_id == df_osm_edge_ids[index,1] ) %>% 
-  ggplot(aes(x= track, fill = factor(course))) + 
-    geom_histogram(binwidth = 45) +
-  facet_wrap(~hour(time))
-```
-
-```{r}
 dens_hr2 <- function(index) {  df_superhotedges_april16pt %>% 
-  filter( way_id == df_osm_edge_ids[index,1]) %>% 
+  filter( way_id == df_osm_edge_ids[index,1] ) %>% 
   merge(y = df_osm_edge_ids, using = way_id) %>% 
   ggplot(aes(x= track)) +
   geom_density(aes(group=factor(hour(time)), color=factor(hour(time)))) + 
-  ggtitle(paste("Density of course grade(without weekends)",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
+  ggtitle(paste("Track density by edge and hour (WW)",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
   xlab("Grades(º)") +
   ylab("Density") 
           
@@ -162,20 +152,72 @@ dens_hr2 <- function(index) {  df_superhotedges_april16pt %>%
 lapply(1:7, FUN = dens_hr2)
 ```
 
+
+
+```{r}
+dens_hr4 <- function(index) { df_superhotedges_april16pt %>% 
+  filter(way_id == df_osm_edge_ids[index,1]) %>% 
+  ggplot(aes(x=time, y = track, color = factor(session_id))) + 
+  geom_point() + 
+  ggtitle(paste("Tracks",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
+  geom_hline(aes(yintercept = 90)) + 
+  geom_hline(aes(yintercept = 180)) +
+  geom_hline(aes(yintercept = 270)) +
+  theme(legend.position="none")+ 
+  ggtitle(paste("Track points by edge and session(WW)",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
+  xlab("date") +
+  ylab("track(º)") 
+          
+}
+
+lapply(1:7, FUN = dens_hr4)
+```
+
+
+```{r}
+dens_hr5 <- function(index) {df_superhotedges_april16pt %>% 
+  filter(way_id == df_osm_edge_ids[index,1]) %>% 
+  ggplot(aes(x=factor(session_id), y=track, color= factor(segment_id))) +
+  geom_boxplot(outlier.shape = NA)+ 
+  ggtitle(paste("Tracks",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
+  geom_hline(aes(yintercept = 90)) + 
+  geom_hline(aes(yintercept = 180)) +
+  geom_hline(aes(yintercept = 270)) +
+  theme(legend.position="none")+ 
+  ggtitle(paste("Median of the track by session and segments",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
+  xlab("Grades(º)") +
+  ylab("Density") 
+          
+}
+
+lapply(1:7, FUN = dens_hr5)
+```
+
+## With the way
+
 ```{r}
 dens_hr3 <- function(index) {  df_superhotedges_april16pt %>% 
   filter( way_id == df_osm_edge_ids[index,1]) %>% 
   merge(y = df_osm_edge_ids, using = way_id) %>% 
   ggplot(aes(x= track)) +
   geom_density(aes(group=factor(course), color=factor(course))) + 
-  ggtitle(paste("Density of course grade(without weekends)",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
+  ggtitle(paste("Track density by edge and course (WW)",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " )) + 
   xlab("Grades(º)") +
   ylab("Density") 
           
 }
 
 lapply(1:7, FUN = dens_hr3)
+
 ```
 
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter(way_id == df_osm_edge_ids[,1] ) %>% 
+  ggplot(aes(x= track, fill = factor(course))) + 
+    geom_histogram(binwidth = 45) +
+  facet_wrap(~hour(time))+
+  ggtitle("Tracks by hour and course (WW)")
+```
 
 

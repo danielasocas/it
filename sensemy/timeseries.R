@@ -4,7 +4,7 @@
 #######################################################################
 #                     Preparing data                                  #
 #######################################################################
-V1 <- c(219537531,35078500,35145521,316459169,37141967,41380172,208262837,41380173,37338733,63192525,106334851,37141970)
+V1 <- c(219537531,35078500,35145521,316459169,37141967,41380172,208262837,41380173,37338733,63192525,106334851,37141970,37141970.2)
 V2 <- c("Rua da Igreja de Paranhos",
 "Rua Doutor Manuel Pereira Da Silva",
 "Rua D. Roberto Frias 1",
@@ -16,11 +16,18 @@ V2 <- c("Rua da Igreja de Paranhos",
 "Parking Biblioteca 1",
 "Rua Henrique de Sousa Reis 1",
 "Rua Henrique de Sousa Reis 2",
-"Rua D. Eduardo Santos Silva")
+"Rua D. Eduardo Santos Silva",
+"Rua D. Eduardo Santos Silva 2")
 
-df_osm_edge_ids <- data.frame(matrix(c(V1,V2), nrow = 12))
-df_osm_edge_ids <-data.frame(matrix(c(list_osm_edge,superhot_edges_names), nrow=12))
-colnames(superhot_edges_names) <- c("way_id", "address")
+df_osm_edge_ids <- data.frame(matrix(c(V1,V2), nrow = 13))
+df_osm_edge_ids <-data.frame(matrix(c(list_osm_edge,superhot_edges_names), nrow=13))
+colnames(df_osm_edge_ids) <- c("way_id", "address")
+
+df_osm_edge_ids <- df_osm_edge_ids[c(2:5,10:13),]
+
+df_osm_edge_ids <- df_osm_edge_ids %>% 
+  mutate(type = if_else( way_id == 35078500 | way_id == 37141967 | way_id == 63192525 | way_id == 106334851 , "h", "v"))
+
 
 #######################################################################
 #                    Individual plots                                 #

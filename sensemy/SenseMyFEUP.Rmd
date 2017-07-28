@@ -107,6 +107,36 @@ library(xlsx)
 
 ```
 
+```{r echo=FALSE, eval=FALSE}
+#Modeling.
+
+if(! "DMwR" %in% rownames(installed.packages())){
+  install.packages("DMwR")
+}
+if(! "rpart" %in% rownames(installed.packages())){
+  install.packages("rpart")
+}
+if(! "rpart.plot" %in% rownames(installed.packages())){
+  install.packages("rpart.plot")
+}
+if(! "Hmisc" %in% rownames(installed.packages())){
+  install.packages("Hmisc")
+}
+if(! "earth" %in% rownames(installed.packages())){
+  install.packages("earth")
+}
+if(! "randomForest" %in% rownames(installed.packages())){
+  install.packages("randomForest")
+}
+
+library(DMwR)
+library(rpart)
+library(rpart.plot)
+library(Hmisc)
+library(earth)
+library(randomForest)
+```
+
 ## Connecting the database.
 ```{r echo=FALSE, eval=FALSE}
 # Connecting Sense My FEUP - DS
@@ -220,6 +250,7 @@ df_sessions_edge_osm_cars <- dbGetQuery(con, "SELECT way_id, COUNT(DISTINCT sess
 
 save(df_sessions_edge_osm_cars, file="df_sessions_edge_osm_cars.Rda")
 ```
+
 
 
 ## Plots edges and LOADING
