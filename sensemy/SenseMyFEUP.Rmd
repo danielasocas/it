@@ -70,17 +70,6 @@ if(! "leaflet" %in% rownames(installed.packages())){
   install.packages("leaflet",dependencies = TRUE)
 }
 
-
-#if(! "sp" %in% rownames(installed.packages())){
-#  install.packages("sp")
-# library(sp)
-#}
-
-#if(! "mapview" %in% rownames(installed.packages())){
-#  install.packages("mapview",dependencies = TRUE)
-#  library(mapview)
-#}
-
 #library(htmlwidgets)
 #library(mapview)
 library(leaflet)
@@ -188,7 +177,7 @@ df_segments_length <- dbGetQuery(con, "SELECT session_id, SUM(length) as distanc
 ```
 
 ```{r echo= FALSE}
-df_segments <- subset(df_segments_length, distance < (distance,0.75) )
+df_segments <- subset(df_segments_length, distance < IQR(distance,0.75) )
 
 ggplot(df_segments, aes(distance)) +
   geom_histogram(bins = 10)
@@ -434,11 +423,6 @@ for(way_id in list_osm_edge) {
         }
         
         counter <- counter + 1 
-        print("hey")
-        print(counter)
-        print(df_osm_edge[counter, 2])
-        print(way_id)
-        print(length(parsed_line))
       }
       
       #print(line)
@@ -475,7 +459,9 @@ dbDisconnect(con)
 
 
 
+
 # PART II: only data of April 2016.
+
 ## Getting data from database.
 
 Df with all filters
@@ -497,7 +483,7 @@ save(df_wayids_porto_april, file="df_wayids_porto_april.Rda")
 
 
 
-## Points April16
+## Data April16
 All
 ```{r}
 df_points_edge_cars_april16 <- data.frame()
@@ -555,6 +541,7 @@ save(df_points_edge_cars_april16_night, file="df_points_edge_cars_april16_night.
 
 ### Just first session, April16 
 ```{r echo=FALSE, eval=FALSE}
+#delete??
 df_first_session_cars_april16 <- data.frame()
 df_first_session_cars_april16 <- dbGetQuery(con, "SELECT distinct on (session_id) as session_id, time_start,time_end
                                           FROM danielasocas.segments_travelmode AS segments
@@ -565,31 +552,8 @@ df_first_session_cars_april16 <- dbGetQuery(con, "SELECT distinct on (session_id
 save(df_first_session_cars_april16, file="df_first_session_cars_april16.Rda")
 ```
 
-### Way id time intersession 
-
-```{r}
-
-#Not anymore
-
-df_intersession_april_gs <- data.frame()
-df_intersession_april_gs <- dbGetQuery(con, "SELECT session_id, way_id, MIN(osm.seconds) as seconds
-                                                  FROM sensemyfeup_raw.osmlocation AS osm
-                                                  INNER JOIN danielasocas.segments_vehicules_april AS segments
-	                                                  USING (session_id)
-                                                  INNER JOIN sensemyfeup_raw.session_offsets 
-	                                                  USING (session_id)
-INNER JOIN sensemyfeup_raw.gslocation as gs
-                                USING (session_id)
-                                                  WHERE (osm.seconds + session_offsets.clock_offset_seconds BETWEEN segments.seconds_start AND seconds_end) AND
-(alt != 0  OR  track != 0)
-                                                  GROUP BY way_id, session_id
-                                                  ORDER BY way_id")
-
-save(df_intersession_april_gs, file="df_intersession_april_gs.Rda")
-
-```
-
 ### Speed
+Data use for most analysis.
 
 ```{r}
 
