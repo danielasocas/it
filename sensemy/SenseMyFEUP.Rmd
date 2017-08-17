@@ -128,6 +128,10 @@ if(! "earth" %in% rownames(installed.packages())){
 if(! "randomForest" %in% rownames(installed.packages())){
   install.packages("randomForest")
 }
+if(! "randomForest" %in% rownames(installed.packages())){
+  install.packages("pROC")
+}
+
 
 library(DMwR)
 library(rpart)
@@ -135,6 +139,7 @@ library(rpart.plot)
 library(Hmisc)
 library(earth)
 library(randomForest)
+library(pROC)
 ```
 
 ## Connecting the database.
@@ -183,7 +188,7 @@ df_segments_length <- dbGetQuery(con, "SELECT session_id, SUM(length) as distanc
 ```
 
 ```{r echo= FALSE}
-df_segments <- subset(df_segments_length, distance < IQR(distance,0.75) )
+df_segments <- subset(df_segments_length, distance < (distance,0.75) )
 
 ggplot(df_segments, aes(distance)) +
   geom_histogram(bins = 10)
@@ -473,7 +478,6 @@ dbDisconnect(con)
 # PART II: only data of April 2016.
 ## Getting data from database.
 
-
 Df with all filters
 
 ```{r}
@@ -614,13 +618,25 @@ df_speed_top <- dbGetQuery(con, "SELECT session_id, segment_id, way_id, osm.seco
                                 USING (session_id)
                             WHERE (osm.seconds between segments.seconds_start AND segments.seconds_end) AND
 gs.seconds = osm.seconds AND gs.millis = osm.millis AND 
-(alt != 0  OR  track != 0) AND (way_id = 35078500 OR way_id = 35145521 OR way_id = 316459169 OR way_id = 37141967 OR way_id = 63192525 OR way_id = 106334851 OR way_id = 37141970) ")
+(alt != 0  OR  track != 0) AND (way_id = 35078500 OR way_id = 35145521 OR way_id = 316459169 OR way_id = 37141967 OR way_id = 63192525 OR way_id = 106334851 OR way_id = 37141970 OR way_id = 36979228) ")
 
 save(df_speed_top, file="df_speed_top.Rda")
 ```
 
+### Sessions all 
 
+```{r}
+df_sessions_allmodes_april16pt <- data.frame()
+df_sessions_allmodes_april16pt <- dbGetQuery(con, "SELECT *
+                            FROM danielasocas.sessions_allmodes_april16pt")
 
+save(df_sessions_allmodes_april16pt, file="df_sessions_allmodes_april16pt.Rda")
+```
 
+```{r}
+df_sessions_allmodes <- data.frame()
+df_sessions_allmodes <- dbGetQuery(con, "SELECT *
+                            FROM danielasocas.sessions_allmodes")
 
-
+save(df_sessions_allmodes, file="df_sessions_allmodes.Rda")
+```

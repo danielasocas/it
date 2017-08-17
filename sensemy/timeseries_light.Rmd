@@ -44,8 +44,6 @@ df_intersession_april16pt %>%
   xlab("") + 
   ylab("Time (min)") +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
-  
-
 ```
 
 
@@ -200,7 +198,6 @@ Average of speed of every point.
 lapply(1:12, FUN = tseries)
 ```
 -->
-
 
 
 

@@ -1,0 +1,490 @@
+---
+title: "ACM poster 2017"
+output: html_notebook
+author: "Daniela S. Gil"
+---
+# Intro 
+
+In this report we are focusing on the most frequented edges, all having more than 170 sessions along 
+April 2016. All of this edges are around FEUP. 
+
+The data frame to use is: df_superhotedges_april16pt.
+    It was created with the df df_speed_top which brings directly all points 
+    of the top edges from the database. 
+    The following filters were applied (more info: PreAnalysis_topedges.Rmd)
+      *Week days
+      *Hour between 8hr and 20h
+      
+    Given a total of 9 variables, 9 edges, 1369 sessions and 190201 points. 
+    Half of the the sessions involve just one edge.  
+    1011 pass by Frei
+    150 sessions have gaps over 5min 
+    394 sessions have gaps over 2min 
+
+
+```{r echo=FALSE}
+#Creating a df with all the points in the sessions that pass by SHE 
+df_superhotedges_april16pt_all <- df_edges_april16pt %>% 
+  filter(session_id %in% df_superhotsessions_april16pt)
+
+```
+
+```{r echo=FALSE}
+
+df_superhotedges_april16pt  %>%
+  merge(df_edges_april16pt, using = session_id) %>% 
+  group_by(session_id) %>%
+  summarise(n = n_distinct(way_id)) %>% 
+  ggplot(aes(n)) +
+  geom_bar(aes(fill=factor(n)))
+
+```
+
+```{r echo=FALSE}
+df_superhotedges_april16pt  %>%
+  group_by(session_id) %>% 
+  summarise(n = n_distinct(segment_id)) %>% 
+  ggplot(aes(n)) +
+  geom_bar(aes(fill=factor(n)))
+
+```
+
+# Map with number of sessions
+```{r echo=FALSE}
+
+########### Selecting edges to map #########
+
+# All edges (in Porto) 
+df_sessions_edges_april16pt <- df_intersession_april16pt %>% 
+  group_by(way_id) %>% 
+  summarise(sessions = n_distinct(session_id)) %>% 
+  merge(y= df_points_edge_osm_april16pt, using = way_id) 
+
+df_osm_edge <- df_sessions_edges_april16pt %>% 
+  select(way_id, sessions)
+
+## Discretization based on number of sessions 
+df_sessions_edges_april16pt <- df_sessions_edges_april16pt %>% 
+  mutate(category = case_when(sessions > 155 ~ "SHE",
+                              sessions >= 50 & sessions <155 ~ "medium",
+                              sessions > 25 & sessions < 50 ~ "low"))
+
+
+# Hot edges 
+df_osm_edge <- df_sessions_edges_april16pt  %>% 
+  subset(way_id %in% df_osm_edge_ids$way_id) %>% 
+  select(way_id, sessions)
+
+######### List before passing to map. #########
+list_osm_edge <- df_osm_edge[, 1]
+
+########## Map in April2016.Rmd #########
+```
+
+```{r}
+ms_1 <- m
+ms_1
+m
+```
+
+
+```{r}
+# Map with all points with nº sessions
+#     green: <50, 50< yellow <155, red > 155 
+
+#ms_3 <- m 
+ms_3
+```
+
+# Intersession time
+
+```{r echo=FALSE}
+ df_intersession_april16pt %>% 
+  filter(intersession_time > 0 ) %>% 
+  merge(df_sessions_edges_april16pt, using = way_id) %>% 
+  ggplot( aes(x=intersession_time, color = category))+
+  scale_x_log10(limits = c(1e0,1e4), breaks = c(10,30,60,1000)) +
+  geom_line(aes(y = 1 - ..y..), stat='ecdf') +
+  scale_color_manual(values = c("grey","blue","red","green"),
+                     breaks = c("SHE", "medium", "low","NA"),
+                     labels = c("High", "Medium", "Low","NA")) +
+  theme(legend.title = element_blank(),
+        legend.text = element_text( size = 20, face = "bold"),
+        legend.position = c(0.8,0.8),
+        axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=20),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=20),
+        panel.background = element_rect(fill = 'white', colour = 'black')) +
+    xlab("Intersession time (min)") + 
+    ylab("P(X>=x)") +
+  geom_vline(xintercept =  c(15,30,45,60), color ="dark grey") 
+  
+```
+
+
+```{r echo=FALSE}
+ df_intersession_april16pt %>% 
+  filter(intersession_time > 0 ) %>% 
+  merge(df_sessions_edges_april16pt, using = way_id) %>% 
+  ggplot( aes(x=intersession_time, color = category))+
+  scale_x_continuous(breaks) +
+  geom_line(aes(y = 1 - ..y..), stat='ecdf') +
+  scale_color_manual(values = c("grey","blue","red","green"),
+                     breaks = c("SHE", "medium", "low","NA"),
+                     labels = c("High", "Medium", "Low","NA")) +
+  theme(legend.title = element_blank(),
+        legend.text = element_text( size = 20, face = "bold"),
+        legend.position = c(0.8,0.8),
+        axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=20),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=20),
+        panel.background = element_rect(fill = 'white', colour = 'black')) +
+    xlab("Intersession time (min)") + 
+    ylab("P(X>=x)") +
+  geom_vline(xintercept =  c(15,30,45,60), color ="dark grey")
+
+
+```
+
+
+# Interpoint time 
+
+```{r echo=FALSE}
+#df_superhotedges_april16pt$interpoint_time <- NULL
+
+#df_superhotedges_april16pt <- 
+  
+df_superhotedges_april16pt <- df_superhotedges_april16pt  %>%
+  group_by(session_id) %>% 
+  arrange(time) %>% 
+  mutate(interpoint_time = c(0,as.numeric(diff(time), units="mins"))) 
+```
+
+```{r}
+boxplot(e$interpoint_time, ylim = c(0,50))
+```
+
+```{r}
+#Different sessions with interpoint > x
+e %>% 
+  filter(interpoint_time >= 2) %>% 
+  count
+```
+
+```{r}
+df_superhotedges_april16pt %>% 
+  filter(interpoint_time > 1) %>% 
+  ggplot(aes(factor(way_id),interpoint_time)) +
+  geom_boxplot() + 
+  coord_cartesian(ylim= c(0,50))
+
+```
+
+```{r}
+df_superhotedges_april16pt %>% 
+  group_by(session_id) %>% 
+  summarise(n = n_distinct(session_id))
+  
+
+  filter(way_id != 37141967) %>% 
+  fgroup_by(session_id) %>% 
+  summarise(speed = quantile(speed,0.9)) %>% 
+  filter(speed == 0)
+```
+
+
+# Temporal
+
+```{r echo=FALSE}
+df_edges_april16pt %>%
+  mutate( category = case_when(way_id %in% df_osm_edge_ids$way_id ~ "SHE", TRUE ~ "ALL")) %>% 
+  group_by(hour =hour(time), category) %>% 
+  summarise(sessions = n_distinct(session_id)) %>% 
+  ggplot(aes(hour, sessions, color = category)) + 
+  geom_line()+
+  scale_x_continuous(breaks = seq(0,23,1))
+```
+
+```{r echo=FALSE}
+df_edges_april16pt %>%
+  merge(df_sessions_edges_april16pt, using = way_id) %>% 
+  group_by(hour =hour(time), category) %>% 
+  summarise(sessions = n_distinct(session_id)) %>% 
+  ggplot(aes(hour, sessions, color = category)) + 
+  geom_line()+
+  scale_x_continuous(breaks = seq(0,23,1))
+```
+
+```{r}
+df_sessions_allmodes_april16pt %>% 
+  group_by(hour = hour(time_start)) %>% 
+  summarise(n_sessions = n_distinct(session_id)) %>% 
+  plot_ly(x=~factor(hour), y=~n_sessions, type = 'scatter', mode = 'lines')
+
+df_sessions_allmodes_april16pt <- df_sessions_allmodes_april16pt %>% 
+  group_by(travelmode) %>% 
+  mutate(total_sessions = n_distinct(session_id))
+
+df_sessions_allmodes_april16pt %>% 
+  filter(travelmode != "NA") %>% 
+  group_by(hour = hour(time_start), travelmode, total_sessions) %>% 
+  summarise(n_sessions = n_distinct(session_id)) %>% 
+  mutate(freq = n_sessions/total_sessions *100) %>% 
+  ggplot(aes(x = hour,y = freq, color=travelmode)) +
+  geom_line() + 
+  ylab("Frequency(%)") +
+  xlab("Hour") +
+  scale_x_continuous(breaks = seq(0,23,1)) + 
+  scale_color_discrete(name = "Travelmode") +
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        legend.title = element_text("Street", size=16, face="bold"), 
+        legend.text = element_text(size=16, face="bold"),
+        panel.background = element_rect(fill = 'white', colour = 'black'),
+        legend.position = c(0.2,0.7))
+
+```
+
+```{r}
+df_sessions_allmodes %>% 
+  filter(travelmode != "NA") %>% 
+  group_by(hour = hour(time_start), travelmode) %>% 
+  summarise(n_sessions = n_distinct(session_id)) %>% 
+  ggplot(aes(x = hour,y = n_sessions, color=travelmode)) +
+  geom_line() + 
+  scale_x_continuous(breaks = seq(0,23,1)) + 
+  theme_light()
+
+```
+
+
+# Origin-Destination 
+
+```{r}
+df_st_hotedges_april16pt <- df_hotedges_april16pt[,-2] %>% 
+  group_by(session_id) %>%
+  slice(which.max(time)) %>% 
+  mutate(end = case_when((lat > 41.175645 & lat < 41.180481 & lon > -8.607200 & lon < -8.586093) ~ "FEUP",  
+                           TRUE ~ "OUT"))  %>% 
+  rename(c("way_id"="way_id_end","segment_id"="segment_id_end", "seconds"="seconds_end","lat" = "lat_end","lon" = "lon_end","speed" = "speed_end", "time"="time_end")) 
+  
+df_st_hotedges_april16pt <- df_hotedges_april16pt %>% 
+  group_by(session_id) %>%
+  slice(which.min(time)) %>% 
+  mutate(start = case_when((lat > 41.175645 & lat < 41.180481 & lon > -8.607200 & lon < -8.586093) ~ "FEUP",  
+                           TRUE ~ "OUT")) %>% 
+  rename(c("way_id"="way_id_start","segment_id"="segment_id_start", "seconds"="seconds_start","lat" = "lat_start","lon" = "lon_start","speed" = "speed_start", "time"="time_start")) %>% 
+  merge(y = df_st_hotedges_april16pt, using = way_id)
+
+
+df_st_hotedges_april16pt <- df_st_hotedges_april16pt %>% 
+  mutate(class_trip = case_when((start == "FEUP" & end == "OUT") ~ 1,
+                    (start == "OUT" & end == "FEUP") ~ 2,
+                    (start == "OUT" & end == "OUT") ~ 3,
+                    (start == "FEUP" & end == "FEUP") ~ 4)) 
+
+df_st_hotedges_april16pt$class_trip <- as.factor(df_st_hotedges_april16pt$class_trip)
+df_st_hotedges_april16pt$end <- as.factor(df_st_hotedges_april16pt$end)
+df_st_hotedges_april16pt$start <- as.factor(df_st_hotedges_april16pt$start)
+str(df_st_hotedges_april16pt)
+
+#All  
+df_st_hotedges_april16pt %>% 
+  mutate(class_day = case_when(wday(time_start)!= 1 &  wday(time_start)!= 7 ~ "Weekday",
+                   TRUE ~ "Weekend")) %>% 
+  ggplot(aes(x=hour(time_start))) + 
+  geom_bar(aes(fill = class_trip )) + 
+  scale_fill_hue(breaks = c("1", "2", "3","4"),
+                 labels = c("From campus", "To campus", "Outside campus","Within campus"))+
+   theme(legend.title = element_blank(),
+        legend.text = element_text( size = 20, face = "bold"),
+        legend.position = c(0.75,0.8),
+        axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        panel.background = element_rect(fill = 'white', colour = 'black')) +
+  xlab("Hour") + 
+  ylab("# of sessions") +
+  facet_grid(~as.factor(class_day)) + 
+       theme(strip.text.x = element_text(size = 20))
+
+```
+
+```{r echo=FALSE}
+# Week days  
+st_wd <- df_st_hotedges_april16pt %>% 
+  filter(wday(time_start)!= 1,  wday(time_start)!= 7) %>% 
+  ggplot(aes(x=hour(time_start))) + 
+  geom_bar(aes(fill = class_trip ))+
+  theme(legend.title = element_blank(),
+        legend.text = element_text( size = 20, face = "bold"),
+        legend.position = c(0.2,0.8),
+        axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        panel.background = element_rect(fill = 'white', colour = 'black')) +
+  xlab("Hour") + 
+  ylab("Nº sessions")
+
+```
+
+```{r echo=FALSE}
+# Weekend
+st_we <- df_st_hotedges_april16pt %>% 
+  filter(wday(time_start)== 1 | wday(time_start)== 7) %>% 
+  ggplot(aes(x=hour(time_start))) + 
+  geom_bar(aes(fill = class_trip )) +
+  theme(legend.title = element_blank(),
+        legend.text = element_text( size = 20, face = "bold"),
+        legend.position = c(0.3,0.8),
+        axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        panel.background = element_rect(fill = 'white', colour = 'black')) +
+  xlab("Hour") + 
+  ylab("Nº sessions")
+
+multiplot(st_wd, st_we, cols = 2)
+```
+
+
+# External Factors(parking, etc)
+
+```{r}
+df_superhotedges_april16pt %>% 
+  filter(way_id == 37141967, day(time) == 20)  %>% 
+  group_by(way_id, session_id, segment_id) %>% 
+  summarise(iqr = IQR(track)) 
+
+df_superhotedges_april16pt %>% 
+  filter((way_id == 37141967 & session_id == 1806847192))  %>% 
+  plot_ly( x= ~time, y= ~track,color = ~factor(segment_id), type ="scatter")
+
+```
+
+## Frei  
+
+```{r}
+df_superhotedges_april16pt %>% 
+  filter(way_id == 37141967)  %>% 
+  group_by(way_id, session_id) %>% 
+  summarise(iqr = IQR(track), m_speed = median(speed), avg_speed = mean(speed)) %>% 
+  filter(m_speed < avg_speed , iqr > 100)
+
+```
+
+```{r}
+f3 <- df_superhotedges_april16pt %>% 
+  filter( session_id == 1577)  %>% 
+  plot_ly( x= ~time, y= ~track,color = ~factor(segment_id), type ="scatter", mode = "lines")
+
+f4 <- df_superhotedges_april16pt %>% 
+  filter( session_id == 1577)  %>% 
+  plot_ly( x= ~time, y= ~speed,color = ~factor(way_id), type ="scatter", mode ="lines") 
+
+subplot(f3,f4, nrows = 2)
+
+subplot(f1,f2, nrows = 2)
+1577
+```
+
+## Manuel Silva
+
+```{r}
+df_superhotedges_april16pt %>% 
+  filter(way_id == 35078500)  %>% 
+  group_by(way_id, session_id) %>% 
+  summarise(iqr = IQR(track), m_speed = median(speed), avg_speed = mean(speed)) %>% 
+  filter(m_speed < avg_speed , iqr > 100)
+
+```
+
+```{r}
+ df_superhotedges_april16pt %>% 
+  filter((way_id == 35078500 & session_id == 19802))  %>% 
+  plot_ly( x= ~time, y= ~track,color = ~factor(segment_id), type ="scatter", mode = "lines")
+```
+
+
+```{r}
+df_superhotedges_april16pt %>% 
+  filter(way_id == 35078500 & session_id == 19802)  %>% 
+  plot_ly( x= ~time, y= ~speed,color = ~factor(way_id), type ="scatter", mode ="lines") 
+```
+
+## Density
+```{r}
+df_superhotedges_april16pt %>% 
+  filter( way_id == 35078500 | way_id == 37141967 | way_id == 36979228) %>% 
+  ggplot(aes(x= track)) +
+  geom_density(aes(group=factor(way_id), color=factor(way_id))) +
+  xlab("Grades(º)") +
+  ylab("Density") %>% 
+  geom_vline(xintercept = c(90,270),color = "grey") + 
+  scale_color_discrete(name = "Street",
+                       breaks = c("35078500", "37141967", "36979228"),
+                      labels=c("1", "2", "3")) +
+  theme(axis.title.x = element_text(face="bold", size=20),
+        axis.text.x  = element_text(size=16),
+        axis.title.y = element_text(face="bold", size=20),
+        axis.text.y  = element_text(size=16),
+        legend.title = element_text("Street", size=16, face="bold"), 
+        legend.text = element_text(size=16, face="bold"),
+        panel.background = element_rect(fill = 'white', colour = 'black'),
+        legend.position = c(0.1,0.8))
+  
+  
+```
+
+ 
+## Rascunhos 
+
+```{r}
+df_superhotedges_april16pt %>% 
+  filter((way_id == 37141967 & session_id == 47419))  %>% 
+  merge(df_osm_edge_ids, using =way_id) %>% 
+  plot_ly( x= ~time, y= ~track,color = ~factor(segment_id), type ="scatter")
+
+```
+
+```{r}
+df_superhotedges_april16pt %>% 
+  filter(( session_id == 14249))  %>% 
+  plot_ly( x= ~time, y= ~speed,color = ~factor(way_id), type ="scatter") 
+
+long_sessions <- c(11712,19904,11273,85840, 832,3827, 85057, 48182)
+```
+
+
+```{r}
+df_hotedges_april16pt %>% 
+  group_by(session_id) %>% 
+  summarise(n = n_distinct(way_id)) %>% 
+  filter(n > 5) %>% 
+  arrange((n))
+
+f <- df_edges_april16pt %>% 
+  filter(session_id == 35307)
+
+
+write.csv(f,"f.csv")
+```
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( way_id == 35078500 ) %>% 
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  
+```
+
+
+
+
+

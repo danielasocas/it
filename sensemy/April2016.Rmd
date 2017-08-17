@@ -38,6 +38,8 @@ df_intersession_april16pt <- df_edges_april16pt %>%
 
 # Transforming seconds to timestamp and calculating intersession time.
 
+df_speed_top$time <- as.POSIXct(df_speed_top$seconds, origin="1970-01-01")
+
 df_intersession_april16pt$time <- as.POSIXct(df_intersession_april16pt$seconds, origin="1970-01-01")
 df_edges_april16pt$time <- as.POSIXct(df_edges_april16pt$seconds, origin="1970-01-01")
 
@@ -114,6 +116,14 @@ ggplotly(int1)
 
 ### Filtering by sessions per way_id 
 
+Number of sessions per way_id 
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% group_by(h = hour(time)) %>%  summarise(n = n_distinct(session_id))  %>% 
+  ggplot(aes(x= h, y = n)) +
+  geom_line()
+```
+ 
+
 ```{r echo=FALSE}
 #Create df with way_ids with >50 sessions
 
@@ -132,6 +142,13 @@ df_superhotedges_april16pt <- df_intersession_april16pt %>%
 
 df_superhotedges_april16pt <- df_id_hotedges_april16pt %>% 
   merge(y= df_edges_april16pt, by="way_id")
+
+
+df_sessions_100edges_april16pt <- df_hotedges_april16pt %>% 
+  group_by(way_id) %>%  
+  summarise(sessions = n_distinct(session_id)) %>% 
+  filter(sessions>100) %>% 
+  merge(y= df_points_edge_osm_april16pt, using = way_id) 
 
 ```
 
@@ -168,14 +185,6 @@ df_points_april16pt_night_n <- df_hotedges_april16pt %>%
   merge( y = df_points_edge_osm_april16pt, by = "way_id") 
 
 ```
-
-```{r echo=FALSE}
-df_intersession_april16pt <- mutate(df_intersession_april16pt, class = ifelse(hour(time) >=7 & hour(time) <= 20, 
-                        "day",
-                        "night"))
-  
-```
-
 
 ### ECDF 
 ```{r echo=FALSE}
@@ -220,14 +229,6 @@ df_intersession_april16pt %>%
 ```
 
 
-```{r echo=FALSE}
-df_intersession_april16pt %>% 
-  filter(intersession_time >0) %>% 
-  subset(way_id %in% df_superhotedges_april16pt$way_id) %>% 
-  ggplot( aes(intersession_time, color= class )) + 
-  scale_x_log10() + stat_ecdf(geom = "step") + 
-  ggtitle("Intersession time >200 sessions Porto")
-```
 
 
 ```{r  echo = FALSE, eval = FALSE }
@@ -323,6 +324,10 @@ df_osm_edge <- df_points_superhotedges_april16pt %>%
   subset(way_id %in% df_osm_edge_ids$way_id) %>% 
   select(way_id, points)
 
+#Use this
+df_osm_edge <- df_sessions_100edges_april16pt  %>% 
+  subset(way_id %in% df_osm_edge_ids$way_id) %>% 
+  select(way_id, sessions)
 
 #List before passing to map.
 list_osm_edge <- df_osm_edge[, 1]
@@ -333,13 +338,16 @@ list_osm_edge <- df_osm_edge[, 1]
 # Creating the empty map of Porto
 
 #Points
-#boxplot(df_osm_edge$points)
+#boxplot(df_osm_edge$sessions)
 
-feup <-   quantile(df_osm_edge$points, 0.90)
-superior <- quantile(df_osm_edge$points, 0.7)
-medio <- quantile(df_osm_edge$points, 0.5)
-low <- quantile(df_osm_edge$points, 0.5)
-low <- 0
+feup <-   quantile(df_osm_edge$sessions, 0.915)
+superior <- quantile(df_osm_edge$sessions, 0.8)
+medio <- quantile(df_osm_edge$sessions, 0.7)
+low <- quantile(df_osm_edge$sessions, 0.5)
+feup <- 155
+superior <- 50
+medium <- 25
+low <-25
 
 m <- leaflet() %>% setView(lng=-8.61419, lat=41.16311, zoom = 13)
 m <- addTiles(m) 
@@ -349,6 +357,7 @@ m <- addProviderTiles(m, "CartoDB.Positron")
 counter <- 1
 
 for(way_id in list_osm_edge) {
+  
   
   df_way_id <- dbGetQuery(con_osm, paste0("SELECT st_astext(st_transform(way, 4326)) AS line FROM planet_osm_line WHERE planet_osm_line.osm_id = ", way_id))
   
@@ -381,23 +390,21 @@ for(way_id in list_osm_edge) {
       
     }
     
-    # Deciding the color of the point.
-
     if(df_osm_edge[counter, 2] > feup) {
           
-          m <- addPolylines(m, lons, lats, color='blue', popup = paste("", way_id, sep = "")) 
+          m <- addPolylines(m, lons, lats, color='red', popup = paste("", way_id, sep = "")) 
     
         } else if (df_osm_edge[counter, 2] >= superior && df_osm_edge[counter, 2] <= feup) {
           
-          m <- addPolylines(m, lons, lats, color='red', popup = paste("", way_id, sep = ""))  
+          m <- addPolylines(m, lons, lats, color='blue', popup = paste("", way_id, sep = ""))  
         
         } else if (df_osm_edge[counter, 2] >= medio && df_osm_edge[counter, 2] <= superior) {
           
-          m <- addPolylines(m, lons, lats, color='yellow', popup = paste("", way_id, sep = ""))
+          m <- addPolylines(m, lons, lats, color='grey', popup = paste("", way_id, sep = ""))
           
         } else if (df_osm_edge[counter, 2] >= low && df_osm_edge[counter, 2] <= medio) {
           
-          m <- addPolylines(m, lons, lats, color='green', popup = paste("", way_id, sep = ""))
+          m <- addPolylines(m, lons, lats, color='grey', popup = paste("", way_id, sep = ""))
           
         }
         
@@ -411,7 +418,7 @@ for(way_id in list_osm_edge) {
       #                         labelOptions = labelOptions(noHide = F, textsize = "15px"))
       #print(line)
     
-    }
+  }
 
 ```
 ### Showing maps 
@@ -448,6 +455,12 @@ Top 12 edges
 m_hot <- m
 m_hot
 ```
+
+```{r echo=FALSE}
+m_100 <- m
+m_100
+```
+
 
 <!-- Ignore this maps for the moment   
 Map Intersession time all 1.30h.
@@ -591,6 +604,12 @@ filter(df_hotedges_april16pt, way_id == 37141967 ) %>%
   group_by(day(time)) %>% 
   ggplot(aes(x= time, y= (speed*18)/5)) + 
   geom_line()
+```
+
+#Points tirados 
+
+```{r}
+
 ```
 
 
