@@ -1,0 +1,52 @@
+---
+title: "Predictions SenseMyFEUP April'16"
+output: html_notebook
+---
+
+# Base Model  1 
+
+## Clasification 
+### Tree 
+```{r echo=FALSE}
+prp(mtree_1, type = 4)
+err_1
+desc_tree1
+```
+
+### Random Forest
+
+```{r echo=FALSE}
+err_rand1
+desc_rand1
+
+importance(rand_1)
+varImpPlot(rand_1,main="Feature Relevance Scores")
+```
+
+## Regression 
+### Tree 
+
+```{r echo=FALSE}
+prp(regtree_1, type = 4)
+regmae_1
+cr1
+```
+
+
+### Random Forest 
+
+```{r echo=FALSE}
+describe(predrand_1)
+randerr_1
+importance(mrand_1)
+varImpPlot(mrand_1,main="Feature Relevance Scores")
+```
+
+
+### Mars 
+
+```{r echo=FALSE}
+summary(mars_1)
+mae_mars_1
+```
+

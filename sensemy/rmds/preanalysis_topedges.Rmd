@@ -1,0 +1,237 @@
+---
+title: "Pre Analysis top 9 edges."
+output: html_notebook
+---
+
+<!-- The datasets to make this notebook are in SenseMyFEUP.Rmd
+     The rest of the code is divided: 
+          General information: April2016.Rmd 
+          Timeseries functions: timeseries.R
+          
+    df_speed_top it is on preanalysis_course.Rmd
+-->
+
+# Map of top points 
+
+```{r echo=FALSE}
+#m_top9 <- m
+m_top9
+```
+
+# Setting dataframe. 
+ Filters: 
+  *No parking edges.
+  *Week days
+  *Hour between 8hr and 20h
+```{r echo=FALSE}
+# Setting the dataframe. No weekends and time between 8-20h.
+
+df_superhotedges_april16pt <- df_speed_top
+
+df_superhotedges_april16pt$time <- as.POSIXct(df_superhotedges_april16pt$seconds, origin="1970-01-01")
+
+df_superhotedges_april16pt <- df_superhotedges_april16pt %>% 
+  filter(hour(time) >=8, hour(time)<= 20, wday(time) != 1 , wday(time) != 7) 
+
+
+# Rua Eduardo Silva 2 
+
+df_superhotedges_april16pt[df_superhotedges_april16pt$way_id == 37141970 & df_superhotedges_april16pt$lat >= 41.17755,]$way_id <- 37141970.2
+
+df_superhotedges_april16pt$way_id <- as.factor(df_superhotedges_april16pt$way_id)
+
+```
+
+## Low speed and Parkings
+
+```{r}
+df_superhotedges_april16pt %>% 
+  group_by(way_id, session_id,segment_id) %>% 
+  summarise(med_tr =median(track),iqr = IQR(track), mean= mean(speed*18/5),
+            median =  median(speed*18/5),q75=  quantile(speed*18/5, 0.75)) %>% 
+  merge(y= df_osm_edge_ids) %>% 
+  ggplot(aes(x=iqr, fill = median)) +
+  geom_histogram(binwidth = 20) + 
+  facet_wrap(~type~address)
+```
+
+
+```{r echo=FALSE}
+# Frei 
+df_superhotedges_april16pt %>% 
+  filter(way_id == 37141967) %>% 
+  group_by(session_id, segment_id) %>% 
+  filter( IQR(track) >100, lon < -8.5981 , lon > -8.5944   ) 
+
+# Others. 
+df_superhotedges_april16pt %>% 
+  filter(way_id == 37141967) %>% 
+  group_by(session_id, segment_id) %>% 
+  filter( IQR(track) >100, lon < -8.5981 , lon > -8.5944   ) 
+
+  
+df_superhotedges_april16pt %>% 
+  filter(way_id == 37141967, day(time) < 5) %>% 
+  group_by(session_id, segment_id) %>% 
+  ggplot(aes(x=factor(session_id), y=track, color= factor(segment_id))) +
+  geom_boxplot(outlier.shape = NA) + 
+  geom_hline(aes(yintercept = 90)) + 
+  geom_hline(aes(yintercept = 180)) +
+  geom_hline(aes(yintercept = 270)) +
+  theme(legend.position="none")+ 
+  ggtitle(paste("Median of the track by session and segments 37141967", sep = " " )) + 
+  xlab("Grades(º)") +
+  ylab("Density") 
+
+```
+
+# Time discretization.
+
+```{r}
+df_superhotedges_april16pt %>%
+  group_by( day = hour(time)) %>% 
+  summarise(n=n_distinct(session_id)) %>% 
+  ggplot(aes(x=day, y = n)) +
+  geom_line() 
+```
+
+
+```{r echo=FALSE}
+dfm_base %>% 
+  ggplot(aes(x= hour, fill = course)) + 
+    geom_histogram(binwidth = 1) +
+  facet_wrap(~heading)+
+  scale_x_continuous(breaks = seq(8,20,2)) + 
+  ggtitle("Sessions by hour and course for everyday(WW)")
+```
+
+```{r echo=FALSE}
+dfm_base %>% 
+  ggplot(aes(x= period, fill = period)) + 
+    geom_histogram(binwidth = 1, stat = "count") +
+  facet_wrap(~day)+
+  ggtitle("Sessions by hour and course for everyday(WW)")
+```
+
+```{r}
+dfm_base %>% 
+  ggplot(aes(x= period, fill = factor(hour))) + 
+    geom_histogram(binwidth = 1, stat = "count") 
+
+```
+
+
+```{r echo=FALSE, message=FALSE}
+day_hist1 <-  function(index) { dfm_base %>% 
+  filter( day == index ) %>% 
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(x= factor(hour))) +
+  geom_histogram(binwidth = 1, aes(group=address, color=address), stat = "count") +
+  facet_wrap(~heading)  +
+  ggtitle(paste("NºSessions by hour, edge and course on April:", index, sep = " " )) + 
+  xlab("Hour") +
+  ylab("Count") 
+}
+
+unique(dfm_base$day) %>% 
+  sort() %>% 
+lapply(FUN = day_hist1)
+```
+
+# Speed & intersession times
+
+## Boxplot intersession time  
+
+```{r echo=FALSE}
+
+df_super_intersession_april16pt <- df_superhotedges_april16pt %>% 
+  group_by(way_id, session_id, heading) %>% 
+  summarise(seconds = min(seconds))
+
+df_super_intersession_april16pt$time <- as.POSIXct(df_super_intersession_april16pt$seconds, origin="1970-01-01")
+
+#df_super_intersession_april16pt <- 
+  
+  df_super_intersession_april16pt  %>%
+  arrange(way_id, time, heading) %>% 
+  mutate(intersession_time = c(0,as.numeric(diff(time), units="mins")))
+
+```
+
+
+```{r echo=FALSE}
+#Boxplots all 
+df_super_intersession_april16pt %>%
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(factor(address), intersession_time)) +
+  geom_boxplot(aes(color= heading )) +
+  coord_cartesian(ylim= c(0,10))+
+  ggtitle(label = "Intersession time top 12 edges") + 
+  xlab("") + 
+  ylab("Time (min)") +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+
+```{r echo=FALSE}
+lapply(1:8, FUN = newspeed_avg_h)
+
+```
+
+```{r echo=FALSE}
+lapply(1:8, FUN = speed_s)
+```
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  group_by(way_id,heading, hour = hour(time)) %>%
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(x=avg_speed, y=sd, color = hour)) +
+  geom_point() +
+  geom_smooth(aes(colour = avg_speed, fill = avg_speed)) +
+  facet_wrap(~ address~heading) + 
+  ggtitle("By hour avg. speed April16")
+```
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( wday(time) != 1 , wday(time) != 7 ) %>% 
+  group_by(way_id,heading,day = day(time), hour = hour(time)) %>% 
+  summarise(avg_speed = mean(speed*18/5), sd = sd(speed)) %>% 
+  merge(y = df_osm_edge_ids, using = way_id) %>% 
+  ggplot(aes(x=avg_speed, y=sd, color = hour)) +
+  geom_point() +
+  geom_smooth(aes(colour = avg_speed, fill = avg_speed)) +
+  facet_wrap(~ address ~ heading) + 
+  ggtitle("By day and hour avg.speed")
+```
+
+
+
+
+# State discretization.
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  group_by(session_id) %>% 
+  summarise(speed = mean(speed*18/5), n= n()) %>% 
+  mutate(flow = case_when(.$speed <= 18 ~ "congestion", .$speed > 18 & .$speed < 30 ~ "sync", .$speed >= 30 ~"free" )) %>% 
+  ggplot(aes(x=n, y = speed, color = flow)) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(0,400)) + 
+  xlab("Distinct sessions") + 
+  ylab("Speed (km/h)") + 
+  ggtitle("State discretization top 7 edges.")
+```
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  group_by(session_id) %>% 
+  summarise(speed = mean(speed*18/5)) %>% 
+  mutate(flow = case_when(.$speed <= 18 ~ "congestion", .$speed > 18 & .$speed < 30 ~ "sync", .$speed >= 30 ~"free" )) %>% 
+  ggplot(aes(x=speed, fill = flow)) + 
+  geom_histogram(binwidth = 2) 
+```
+
+
+

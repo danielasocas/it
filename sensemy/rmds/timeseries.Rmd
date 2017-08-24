@@ -1,0 +1,72 @@
+---
+title: "Time series top way_ids"
+output: html_notebook
+---
+
+```{r echo=FALSE}
+h <- df_superhotedges_april16pt %>% 
+  filter( way_id == list_osm_edge[10] ) %>% 
+  plot_ly(x= ~time, y= ~(speed*18)/5, color = ~class) %>% 
+  layout(title = paste("Time series of speed for way_id",list_osm_edge[10], sep = " " ),yaxis = list(title="Speed (km/h)"),
+         xaxis = list(title="Date"))
+```
+
+```{r}
+m
+```
+
+## All points time x speed for top way_id
+
+```{r}
+h1
+```
+
+```{r}
+h2
+```
+
+```{r}
+h3
+```
+
+```{r}
+h4
+```
+
+```{r}
+h5
+```
+
+```{r}
+h6
+```
+
+```{r}
+h7
+```
+
+```{r}
+h8
+```
+
+```{r}
+h9
+```
+
+```{r}
+h10
+```
+
+
+##Averages time x speed for top way_id
+```{r echo=FALSE, eval=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( way_id == list_osm_edge[3] ) %>% 
+  group_by(day = day(time)) %>% 
+  summarise(speed = mean(speed)) %>% 
+  plot_ly(x= ~day, y= ~(speed*18)/5) %>% 
+  layout(yaxis = list(title="Speed (km/h)"),
+         xaxis = list(title="Date"))
+
+```
+
