@@ -1,8 +1,8 @@
 ---
 title: "Sense My FEUP - Mobility forecasting based on GPS location tracking"
 author: "Daniela S. Gil"
-output: html_notebook
 date: 25-08-2017
+output: html_notebook
 ---
 
 # Introduction

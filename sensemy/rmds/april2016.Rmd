@@ -1,8 +1,26 @@
 ---
 title: 'Sense My FEUP - April 2016 Data'
 author: "Daniela S. Gil"
+date: 25-08-2017
 output: html_notebook
 ---
+
+# Introduction 
+
+This report explores the dataframes from April 2016 (sense_my_feup.Rmd).
+The data is soon filtered to consider only points in the Porto square. 
+Finally, it concludes the main edges for better evaluation in the next chapters. 
+
+#### Index: 
+
+  * Data setup 
+  * Intersession time
+  * Mapping 
+  * Sessions 
+  * Speed
+  * Time series (first attempt)
+
+--------------------------------------------------------------------------------
 
 ```{r echo = FALSE, eval=FALSE}
 save.image("SensemyWorkSpace.RData")
