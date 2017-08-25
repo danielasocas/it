@@ -4,7 +4,18 @@ author: "Daniela S. Gil"
 output: html_notebook
 ---
 
-# PART I: Base analysis.  
+This Notebook concentrates to be the base file of the project. 
+Meaning to have all the basic steps for his execution. This includes the following 
+set ups: 
+* Packages to install.
+* Connection to the database.
+* Mapping chunk. 
+* Getting data from database. 
+  + Points.
+  + Sessions.
+  + All info. 
+
+# PART I: system set up.  
 
 ## Package installation. 
 ```{r echo=FALSE, eval=FALSE}
@@ -159,9 +170,28 @@ con_osm <- dbConnect(drv, dbname = "openstreetmap",
                      user = "marciofontes", password = pw)
 ```
 
-## General EDA.
-### Getting data. 
+## Disconnecting Databases.
+```{r echo=FALSE, eval=FALSE}
+dbDisconnect(con_osm)
+dbDisconnect(con)
+```
 
+
+
+# Part II:  First attempts.
+
+This is the first attempt to understand the data. This is replaced later with 
+better coding but its left here to compare first attempts and backup. Mapping it
+is then separated in functions to easier approach. 
+Specially chunks to get data from database and plot:
+  * Distance by sessions
+  * Getting data per edge
+    - Number of points per edge 
+    - Number of sessions per edge
+  * Mapping 
+  * ECDF 
+  
+## Distance by sessions 
 ```{r echo= FALSE}
 df_segments_length <- data.frame()
 df_segments_length_tm <- dbGetQuery(con, "SELECT session_id, SUM(length) as distance, travelmode
@@ -201,9 +231,7 @@ df_segments_timestamp <- dbGetQuery(con, "SELECT session_id, time_start,time_end
 ```
 
 
-
 ## Getting data per edge.
-
 ### POINTS per edge. 
 Getting the points filtered by only segments with travelmode = car or bus.
 
@@ -222,7 +250,7 @@ df_points_edge_osm_cars <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS points
                                        GROUP BY way_id
                                        ORDER BY points DESC")
 
-save(df_points_edge_osm_cars, file="df_points_edge_osm_cars2.Rda")
+save(df_points_edge_osm_cars, file="df_points_edge_osm_cars.Rda")
 ```
 
 ### SESSION per edge. 
@@ -247,9 +275,11 @@ save(df_sessions_edge_osm_cars, file="df_sessions_edge_osm_cars.Rda")
 
 
 
+
 ## Plots edges and LOADING
 ### POINTS 
 ```{r echo=FALSE, eval=FALSE}
+# NECESSARY FOR MAPPING
 # REFERENCE BY POINTS
 #Loading df about to use.
 
@@ -267,8 +297,6 @@ summary(p1)
 
 ggplot(p1, aes(points)) + geom_histogram(binwidth = 10) +
   xlim(0,1000)
-
-
 ```
 
 #### ECDF 
@@ -296,7 +324,6 @@ P <- ecdf(subset(df_osm_edge, points < quantile(df_osm_edge$points,.9))$points)
 
 ```{r eval= TRUE}
 plot(P, log="x", xlim=c(1, max(df_osm_edge$points)))
-
 ```
 
 ### SESSIONS 
@@ -448,44 +475,13 @@ write.xlsx(df_osm_edge, file="df_sessions_edge_osm.xlsx")
 ```
 
 
-# Disconnecting Databases.
-```{r echo=FALSE, eval=FALSE}
-dbDisconnect(con_osm)
-dbDisconnect(con)
-
-```
 
 
+# PART III: only data of April 2016.
 
+ Getting data from database, exclusively for April 2016.
 
-
-
-# PART II: only data of April 2016.
-
-## Getting data from database.
-
-Df with all filters
-
-```{r}
-df_wayids_porto_april <- data.frame()
-df_wayids_porto_april <- dbGetQuery(con, "SELECT session_id, segment_id, way_id, osm.seconds, osm.lat, osm.lon, gs.speed
-                            FROM segments_vehicules_april as segments
-                              INNER JOIN sensemyfeup_raw.gslocation as gs
-                                USING (session_id)
-                              INNER JOIN sensemyfeup_raw.osmlocation as osm
-                                USING (session_id)
-                            WHERE (osm.seconds between segments.seconds_start AND segments.seconds_end) AND
-gs.seconds = osm.seconds AND gs.millis = osm.millis AND 
-(alt != 0  OR  track != 0)")
-
-save(df_wayids_porto_april, file="df_wayids_porto_april.Rda")
-```
-
-
-
-## Data April16
-
-###Points
+##Points
 All
 ```{r}
 df_points_edge_cars_april16 <- data.frame()
@@ -515,7 +511,7 @@ INNER JOIN sensemyfeup_raw.gslocation as gs
                                 USING (session_id)
                                        WHERE (osm.seconds  BETWEEN segments.seconds_start AND seconds_end) AND 
 (alt != 0  OR  track != 0)  AND
-EXTRACT(HOUR from time_start) BETWEEN 7 and 20
+EXTRACT(HOUR from time_start) BETWEEN 8 and 20
                                        GROUP BY way_id
                                        ORDER BY points DESC")
 
@@ -532,7 +528,7 @@ df_points_edge_cars_april16_night <- dbGetQuery(con, "SELECT way_id, COUNT(*) AS
 INNER JOIN sensemyfeup_raw.gslocation as gs
                                 USING (session_id)
                                        WHERE (osm.seconds  BETWEEN segments.seconds_start AND seconds_end) AND 
-EXTRACT(HOUR from time_start) > 20 OR EXTRACT(HOUR from time_start) < 7 AND 
+EXTRACT(HOUR from time_start) > 20 OR EXTRACT(HOUR from time_start) < 8 AND 
 (alt != 0  OR  track != 0)
                                        GROUP BY way_id
                                        ORDER BY points DESC")
@@ -540,22 +536,13 @@ EXTRACT(HOUR from time_start) > 20 OR EXTRACT(HOUR from time_start) < 7 AND
 save(df_points_edge_cars_april16_night, file="df_points_edge_cars_april16_night.Rda")
 ```
 
+## Speed
+Data used for most analysis.
+* Speed: data used for April16, all edges and relevant features.
+* Top speed: data for preanalysis top edges, includes track.
 
-### Just first session, April16 
-```{r echo=FALSE, eval=FALSE}
-#delete??
-df_first_session_cars_april16 <- data.frame()
-df_first_session_cars_april16 <- dbGetQuery(con, "SELECT distinct on (session_id) as session_id, time_start,time_end
-                                          FROM danielasocas.segments_travelmode AS segments
-                                          WHERE (segments.travelmode = 'car' OR segments.travelmode =  'bus') AND
-                                          EXTRACT(MONTH from time_start) = 4 AND EXTRACT(YEAR from time_start) = 2016
-                                          ORDER BY session_id, time_start")
-
-save(df_first_session_cars_april16, file="df_first_session_cars_april16.Rda")
-```
-
-### Speed
-Data use for most analysis.
+It is in To do list change the name of this because it is not only about speed. 
+It is the main dataframe of this project. 
 
 ```{r}
 
@@ -589,7 +576,8 @@ gs.seconds = osm.seconds AND gs.millis = osm.millis AND
 save(df_speed_top, file="df_speed_top.Rda")
 ```
 
-### Sessions all 
+## Sessions all 
+Number of sessions for all transport modes in April and in general. 
 
 ```{r}
 df_sessions_allmodes_april16pt <- data.frame()
