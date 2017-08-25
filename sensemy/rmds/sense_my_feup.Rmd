@@ -2,20 +2,26 @@
 title: "Sense My FEUP - Mobility forecasting based on GPS location tracking"
 author: "Daniela S. Gil"
 output: html_notebook
+date: 25-08-2017
 ---
+
+# Introduction
 
 This Notebook concentrates to be the base file of the project. 
 Meaning to have all the basic steps for his execution. This includes the following 
-set ups: 
-* Packages to install.
-* Connection to the database.
-* Mapping chunk. 
-* Getting data from database. 
-  + Points.
-  + Sessions.
-  + All info. 
+setups:
 
-# PART I: system set up.  
+  * Packages to install.
+  * Connection to the database.
+  * Mapping. 
+  * Getting data from database.
+    +  Points.
+    +  Sessions.
+    +  All info. 
+
+--------------------------------------------------------------------------------
+
+# PART I: system setup.  
 
 ## Package installation. 
 ```{r echo=FALSE, eval=FALSE}
@@ -184,10 +190,11 @@ This is the first attempt to understand the data. This is replaced later with
 better coding but its left here to compare first attempts and backup. Mapping it
 is then separated in functions to easier approach. 
 Specially chunks to get data from database and plot:
+  
   * Distance by sessions
   * Getting data per edge
-    - Number of points per edge 
-    - Number of sessions per edge
+    + Number of points per edge 
+    + Number of sessions per edge
   * Mapping 
   * ECDF 
   
