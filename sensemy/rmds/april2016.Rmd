@@ -26,15 +26,17 @@ Finally, it concludes the main edges for better evaluation in the next chapters.
 save.image("SensemyWorkSpace.RData")
 #load("df_first_session_cars_april16.Rda")
 load("SensemyWorkSpace.RData")
-
+source("../functions/comparing_edges_level.R")
 ```
 
 
 # SenseMyFEUP data
-## Data loading
- Data is filtered by travelmode (car and bus) and date (April 2016).      
 
-```{r echo=FALSE}
+## Data loading
+ Data used is previously filtered by travelmode (car and bus) and date (April 2016).      
+ We filter our data to consider only points in a square of the Porto Metropolitan area. 
+ 
+```{r echo=FALSE, eval=FALSE}
 #Filtering by rectangle in Porto 
 
 df_edges_april16 <- df_speed
@@ -44,40 +46,46 @@ df_edges_april16pt <- df_speed %>%
 ```
 
 ## Intersession times
-
-### Visualizing intersession times
+  This section explores the time between different sessions in the 
+same edge.  
+ 
+### Intersession times and number of sessions.
 ```{r echo=FALSE, eval=FALSE}
 
-#Getting data from df_speed
+# Transforming seconds to timestamp 
+
+df_edges_april16pt$time <- as.POSIXct(df_edges_april16pt$seconds, origin="1970-01-01")
+df_speed_top$time <- as.POSIXct(df_speed_top$seconds, origin="1970-01-01")
+df_speed$time <- as.POSIXct(df_speed$seconds, origin="1970-01-01")
+
+# Getting data from df_speed
 
 df_intersession_april16pt <- df_edges_april16pt %>% 
   group_by(way_id, session_id) %>% 
   summarise(seconds = min(seconds))
 
-# Transforming seconds to timestamp and calculating intersession time.
-
-df_speed_top$time <- as.POSIXct(df_speed_top$seconds, origin="1970-01-01")
-
-df_intersession_april16pt$time <- as.POSIXct(df_intersession_april16pt$seconds, origin="1970-01-01")
-df_edges_april16pt$time <- as.POSIXct(df_edges_april16pt$seconds, origin="1970-01-01")
+# Calculating intersession time.
 
 df_intersession_april16pt <- df_intersession_april16pt  %>%
   arrange(desc(way_id), time) %>% 
   mutate(intersession_time = c(0,as.numeric(diff(time), units="mins")))
 
-# Remove Min column
-# df_intersession_april$min <- NULL 
+df_intersession_april16pt$time <- as.POSIXct(df_intersession_april16pt$seconds, origin="1970-01-01")
+
 ```
 
-All intersession time Porto April16 
+All intersession time Porto April16. 
+This figure shows that most of the edges have an intersession time greater than 1 hour.
 ```{r echo=FALSE}
 plot_ly(y = df_intersession_april16pt$intersession_time, type = "box", name = "All way_ids") %>% 
-  add_boxplot(y= filter(df_intersession_april16pt, intersession_time > 0 )$intersession_time, name = "At least 2 sessions") %>% 
+  add_boxplot(y= filter(df_intersession_april16pt, intersession_time != 0 )$intersession_time, name = "At least 2 sessions") %>% 
   layout(title="Intersession time (mins)", yaxis = list(range = c(0,5000)))
 
 ```
 
-Intersession time along the week 
+Intersession time along the week.
+Here we can see that weekends have an intersession time way bigger than weekdays, this 
+could be caused by users going out of Porto on the weekends, reaching out our frontier. 
 ```{r echo=FALSE}
 p <- ggplot(df_intersession_april16pt, aes(x = weekdays(time), y = intersession_time, fill = interaction(weekdays(time)) )) + 
   geom_boxplot() + 
@@ -95,52 +103,44 @@ p
 
 ```
 
-Histogram intersession time.
-```{r echo=FALSE}
 
+```{r echo=FALSE, eval= FALSE}
+# Histogram intersession time.
 int2 <- df_intersession_april16pt %>%
-  filter(intersession_time > 0) %>% 
+  filter( intersession_time != 0) %>% 
   ggplot(aes(intersession_time/60)) + 
   geom_histogram(binwidth = 9) + 
   ggtitle("Intersession time (hours)") +
-  coord_cartesian(xlim=c(0,300))
-int2 <- ggplotly(int2)
+  xlab("Hours") +
+  coord_cartesian(xlim=c(0,200))
+ggplotly(int2)
 
-int3 <- df_intersession_april16pt %>%
-  filter(intersession_time > 0) %>% 
-  ggplot(aes(intersession_time/60)) + 
-  geom_histogram(binwidth = 1) +
-  coord_cartesian(xlim = c(0,25))
-int3 <- ggplotly(int3)
 
-subplot(int2,int3, nrows = 2)
 ```
 
-Number of sessions per way_id
+Number of sessions per edge.
+We can see the limitations in our data when most of the edges have less than 5 sessions
+in the whole month, mostly even having just 1. 
+In next chapters we will study more the edges with more than 50 sessions. 
 
 ```{r echo=FALSE,  message=FALSE}
 int1 <- df_intersession_april16pt %>% 
   group_by(way_id) %>% 
-  summarise(n_sessions = n()) %>%  
+  summarise(n_sessions = n()) %>% 
   ggplot(aes(x =n_sessions)) +
   geom_histogram(binwidth = 10) +
   coord_cartesian(xlim = c(0,150)) +
   ggtitle("Number of sessions per way_id in Porto") +
+  xlab("Number of sessions") +
   geom_vline(xintercept = 50, size = 1, colour = "#FF3721",
                    linetype = "dashed")
 
 ggplotly(int1)
 ```
 
-### Filtering by sessions per way_id 
-
-Number of sessions per way_id 
-```{r echo=FALSE}
-df_superhotedges_april16pt %>% group_by(h = hour(time)) %>%  summarise(n = n_distinct(session_id))  %>% 
-  ggplot(aes(x= h, y = n)) +
-  geom_line()
-```
- 
+### Analizing edges >50 sessions.  
+* hotedges -> more 50 sessions. 3537 sessions in total.
+* superhot_edges -> more 170 sessions. 1369 sessions in total. 
 
 ```{r echo=FALSE}
 #Create df with way_ids with >50 sessions
@@ -153,23 +153,23 @@ df_id_hotedges_april16pt <- df_intersession_april16pt %>%
 df_hotedges_april16pt <- df_id_hotedges_april16pt %>% 
   merge(y= df_edges_april16pt, by="way_id")
 
-df_superhotedges_april16pt <- df_intersession_april16pt %>% 
+#Create df with way_ids with >170 sessions 
+#This is NO LONGER used. 
+#Updated with df_superhotedges_april16pt created in  preanalysis_course.Rmd
+df_id_superhotedges_april16pt <- df_intersession_april16pt %>% 
   group_by(way_id) %>% 
   summarise(n_sessions = n()) %>%  
-  filter(n_sessions >= 200) 
+  filter(n_sessions >= 170) 
 
-df_superhotedges_april16pt <- df_id_hotedges_april16pt %>% 
+df_superhotedges_april16pt <- df_id_superhotedges_april16pt %>% 
   merge(y= df_edges_april16pt, by="way_id")
 
-
-df_sessions_100edges_april16pt <- df_hotedges_april16pt %>% 
-  group_by(way_id) %>%  
-  summarise(sessions = n_distinct(session_id)) %>% 
-  filter(sessions>100) %>% 
-  merge(y= df_points_edge_osm_april16pt, using = way_id) 
-
+n_distinct(df_hotedges_april16pt$session_id)
 ```
 
+##### Points (probably to delete) 
+This section is needed to then map. Maps the amount of points.
+It is better to map with number of sessions. 
 ```{r echo=FALSE, eval=FALSE} 
 # POINTS for mapping
 
@@ -183,15 +183,14 @@ df_points_hotedges_april16pt <- df_intersession_april16pt %>%
 df_points_superhotedges_april16pt <- df_intersession_april16pt %>% 
   group_by(way_id) %>% 
   summarise(n_sessions = n()) %>% 
-  filter(n_sessions >= 200) %>% 
+  filter(n_sessions >= 170) %>% 
   merge( y = df_points_edge_osm_april16pt, by = "way_id") 
 
 
 df_superhotedges_april16pt <-mutate(df_superhotedges_april16pt, class = ifelse(hour(time) >=7 & hour(time) <= 20, 
                         "day",
                         "night"))
-
-
+()
 #Day
 df_points_hotedges_april16pt_d <- df_hotedges_april16pt %>% 
   filter(hour(time) >=7, hour(time)<= 20, n_sessions >= 50) %>% 
@@ -205,6 +204,7 @@ df_points_april16pt_night_n <- df_hotedges_april16pt %>%
 ```
 
 ### ECDF 
+Only 25% is under 1h intersession time. 
 ```{r echo=FALSE}
 e1 <- ggplot(subset(df_intersession_april16pt, intersession_time > 0), aes(intersession_time)) + 
   stat_ecdf(geom = "step") +
@@ -216,22 +216,7 @@ e2 <- ggplot(subset(df_intersession_april16pt, intersession_time > 0), aes(inter
 grid.arrange(e1, e2, ncol= 2, top = "Intersession time all sessions Porto (mins)")
 ```
  
-```{r echo=FALSE, eval=FALSE}
-
-#Dont, without colors
-e3 <-  ggplot(df_hotedges_april16pt_day, aes(avg_itm)) + 
-  scale_x_log10(breaks = seq(0,1000,200)) +
-  stat_ecdf(geom = "step")  + 
-  xlab(" Log Intersession time(min)") 
-  
-e4 <-  ggplot(df_hotedges_april16pt_night, aes(x = avg_itm)) + 
-  scale_x_log10(breaks = seq(0,1000,200)) +
-  stat_ecdf(geom = "step")  +
-  xlab(" Log Intersession time(min)") 
-
-grid.arrange(e3, e4, ncol= 2, top  = "ECDF Average Intersession time day(>50) ")
-```
-
+As expected, there is higher intersession time at night. 
 ```{r echo=FALSE, eval=FALSE}
 # Classifying points by day for ECDF 
 df_intersession_april16pt <-mutate(df_intersession_april16pt, class = ifelse(hour(time) >=7 & hour(time) <= 20, 
@@ -242,29 +227,9 @@ df_intersession_april16pt %>%
   filter(intersession_time >0) %>% 
   subset(way_id %in% df_hotedges_april16pt$way_id) %>% 
   ggplot( aes(intersession_time, color= class )) + 
-  scale_x_log10() + stat_ecdf(geom = "step") + 
+  scale_x_log10() + 
+  stat_ecdf(geom = "step") + 
   ggtitle("Intersession time >50 sessions Porto")
-```
-
-
-
-
-```{r  echo = FALSE, eval = FALSE }
-
-# Same as plotly before but separate. Ignore. 
-
-ECDF all by #points 
-ecdf_all <- ggplot(df_osm_edge, aes(points)) + 
-  scale_x_log10() + stat_ecdf(geom = "step") + xlab("All points")
-
-ecdf_day<- ggplot(df_osm_edge, aes(points)) + 
-  scale_x_log10() + stat_ecdf(geom = "step") + title("ECDF day")+ xlab("Points at day")
-
-ecdf_night <- ggplot(df_osm_edge, aes(points)) + 
-  scale_x_log10() + stat_ecdf(geom = "step") + title("ECDF night")+ xlab("Points at night")
-
-grid.arrange(ecdf_all,ecdf_day,ecdf_night,  ncol=3)
-
 ```
 
 
@@ -282,13 +247,12 @@ df_intersession_april16pt %>%
 
 ###  Edges with >50 sessions. 
 
-
 ```{r echo=FALSE, eval=TRUE}
 low1 <- df_intersession_april16pt %>% 
   subset(way_id %in% df_hotedges_april16pt$way_id) %>% 
   subset( intersession_time < quantile(df_intersession_april16pt$intersession_time, 0.35)) %>% 
   ggplot(aes(intersession_time)) +
-  geom_histogram(bins = 10) + 
+  geom_histogram(bins = 30) + 
   scale_x_continuous(breaks = seq(0,200,10))+
   xlab("Intersession time (mins)") + 
   ggtitle("Lowest 35% intersession time >50")
@@ -312,133 +276,6 @@ ggplotly(c1)
 
 
 
-Top 10% points
-```{r echo = FALSE, eval=TRUE}
-
-#Not necessary 
-
-summary(df_points_hotedges_april16pt$points)
-quantile(df_points_hotedges_april16pt$points, 0.90)
-
- boxplot(df_points_hotedges_april16pt$points)  
-
-
-```
-
-
-## Map points April 2016
-
-```{r echo=FALSE, eval=FALSE}
-#Necessary for mapping 
-
-#Reorder columns
-df_osm_edge <- df_points_hotedges_april16pt %>% 
-  select(way_id, points)
-
-df_osm_edge <- df_points_superhotedges_april16pt %>% 
-  select(way_id, points)
-
-df_osm_edge <- df_points_superhotedges_april16pt %>% 
-  subset(way_id %in% df_osm_edge_ids$way_id) %>% 
-  select(way_id, points)
-
-#Use this
-df_osm_edge <- df_sessions_100edges_april16pt  %>% 
-  subset(way_id %in% df_osm_edge_ids$way_id) %>% 
-  select(way_id, sessions)
-
-#List before passing to map.
-list_osm_edge <- df_osm_edge[, 1]
-
-```
-
-```{r echo=FALSE, eval=FALSE}
-# Creating the empty map of Porto
-
-#Points
-#boxplot(df_osm_edge$sessions)
-
-feup <-   quantile(df_osm_edge$sessions, 0.915)
-superior <- quantile(df_osm_edge$sessions, 0.8)
-medio <- quantile(df_osm_edge$sessions, 0.7)
-low <- quantile(df_osm_edge$sessions, 0.5)
-feup <- 155
-superior <- 50
-medium <- 25
-low <-25
-
-m <- leaflet() %>% setView(lng=-8.61419, lat=41.16311, zoom = 13)
-m <- addTiles(m) 
-m <- addProviderTiles(m, "CartoDB.Positron")
-
-
-counter <- 1
-
-for(way_id in list_osm_edge) {
-  
-  
-  df_way_id <- dbGetQuery(con_osm, paste0("SELECT st_astext(st_transform(way, 4326)) AS line FROM planet_osm_line WHERE planet_osm_line.osm_id = ", way_id))
-  
-  line <- df_way_id$line
-  line <- as.character(line)
-  
-  line <- unlist(strsplit(line, split='(', fixed=TRUE))[2]
-  line <- substr(line, 1, nchar(line) - 1)
-  
-  parsed_line <- strsplit(line, ",")
-  
-  lons <- c()
-  lats <- c()
-  
-  if(length(parsed_line) != 0) {
-    
-    #Defining lons and lats as variables to use later.
-
-    for(coord in parsed_line[[1]]) {
-      
-      lon <- unlist(strsplit(coord, split=' ', fixed=TRUE))[1]
-      lat <- unlist(strsplit(coord, split=lon, fixed=TRUE))[2]
-      lat <- substr(lat, 2, nchar(lat))
-      
-      lon <- as.numeric(lon)
-      lat <- as.double(lat)
-      
-      lons <- c(lons, lon)
-      lats <- c(lats, lat)
-      
-    }
-    
-    if(df_osm_edge[counter, 2] > feup) {
-          
-          m <- addPolylines(m, lons, lats, color='red', popup = paste("", way_id, sep = "")) 
-    
-        } else if (df_osm_edge[counter, 2] >= superior && df_osm_edge[counter, 2] <= feup) {
-          
-          m <- addPolylines(m, lons, lats, color='blue', popup = paste("", way_id, sep = ""))  
-        
-        } else if (df_osm_edge[counter, 2] >= medio && df_osm_edge[counter, 2] <= superior) {
-          
-          m <- addPolylines(m, lons, lats, color='grey', popup = paste("", way_id, sep = ""))
-          
-        } else if (df_osm_edge[counter, 2] >= low && df_osm_edge[counter, 2] <= medio) {
-          
-          m <- addPolylines(m, lons, lats, color='grey', popup = paste("", way_id, sep = ""))
-          
-        }
-        
-        counter <- counter + 1 
-        
-      }
-      
-      #content <- paste("w", way_id, sep = "")
-      #m <- addPopups(m, lons, lats, content, options = popupOptions(closeButton = TRUE))
-      #m <- addLabelOnlyMarkers(m, lons,lats, label = paste("", way_id, sep = ""), 
-      #                         labelOptions = labelOptions(noHide = F, textsize = "15px"))
-      #print(line)
-    
-  }
-
-```
 ### Showing maps 
 
 Traffic  Map April Porto 2016 all
@@ -455,19 +292,8 @@ m_50 <- m
 m_50 
 ```
 
-Traffic day Map April 2016
-```{r echo=FALSE}
-m_50_day <- m
-m_50_day
-```
 
-Traffic night Map April 2016
-```{r echo=FALSE}
-m_20_night <- m
-m_20_night
-```
-
-Top 12 edges 
+Top edges 
 
 ```{r echo=FALSE}
 m_hot <- m
@@ -480,115 +306,71 @@ m_100
 ```
 
 
-<!-- Ignore this maps for the moment   
-Map Intersession time all 1.30h.
-```{r echo=FALSE}
-m_itm <- m
-m_itm
-```
-
-Map Intersession time (<1.3h) day.
-```{r echo=FALSE}
-m_itm_day <- m
-m_itm_day
-#mapshot(m_night_semsessions, file = "~/maps/top_intersessions_night_april.png")
-```
-Map Intersession time (<2h)night.
-```{r echo=FALSE}
-m_itm_night <- m
-m_itm_night
-#mapshot(m, file = "~/maps/_all_april.png")
-```
--->
-
-## #Sessions by date >50
-
-### Day of the week 
+### Number of sessions analysis.
+#### Day of the week 
 ```{r echo= FALSE} 
-df_intersession_april16pt %>% 
-  subset(way_id %in% df_hotedges_april16pt$way_id) %>% 
-  group_by(weekday =wday(time)) %>% 
-  summarise(way_ids = n()) %>% 
-  ggplot(aes(weekday,way_ids)) + 
-  geom_line() +
+plot.n_sessions(df_speed,df_hotedges_april16pt, df_speed_top, wday) + 
+  xlab("Day of the week")  +
   scale_x_discrete(limits = c("Domingo", "Segunda", "Terça", "Quarta", "Quinta", 
-    "Sexta", "Sábado"))
+    "Sexta", "Sábado")) 
 
 ```
 
-### By day 
+#### By day 
 ```{r echo= FALSE}
-df_intersession_april16pt %>% 
-  subset(way_id %in% df_hotedges_april16pt$way_id) %>% 
-  group_by(day =day(time)) %>% 
-  summarise(n = n()) %>% 
-  ggplot(aes(day,n)) + 
-  geom_line() + 
-  scale_x_continuous(breaks = seq(1,30,1))
-
+plot.n_sessions(df_speed, df_hotedges_april16pt, df_speed_top, day) + 
+  xlab("Day") +
+  scale_x_continuous(breaks = seq(1,30,1)) 
 ```
 
-##By hour 
+#### By hour 
 ```{r echo= FALSE} 
-df_intersession_april16pt %>% 
-  subset(way_id %in% df_hotedges_april16pt$way_id) %>% 
-  group_by(hour =hour(time)) %>% 
-  summarise(n = n()) %>% 
-  ggplot(aes(hour,n)) + 
-  geom_line() +
-  scale_x_continuous(breaks = seq(0,23,1))
-
+plot.n_sessions(df_speed,df_hotedges_april16pt, df_speed_top, hour) + 
+  xlab("Hour") +
+  scale_x_continuous(breaks = seq(0,23,1)) 
 ```
+
+
+
+
 
 ## Speeds >50
 
 ```{r}
 # Speed by way_id and session.\
-avg_speed_wayid <- df_speed %>% 
+df_speed %>% 
   subset(way_id %in% df_hotedges_april16pt$way_id) %>% 
   group_by(way_id) %>% 
-  summarise(avg_speed = mean((speed*18)/5), n = n() )
-
-ggplot(avg_speed_wayid, aes(avg_speed)) +
-  geom_histogram(binwidth = 3) + 
-  scale_x_continuous(name = "Avg_speed(km/h)",  breaks = seq(0, 150, 3) )
+  summarise(avg_speed = mean((speed*18)/5), n = n() ) %>% 
+  ggplot( aes(avg_speed)) +
+  geom_histogram(binwidth = 3) 
 ```
 
 Speed by week 
 ```{r echo=FALSE}
-df_hotedges_april16pt %>% 
-  group_by(weekday =wday(time)) %>% 
-  summarise(avg_speed = mean((speed*18)/5)) %>% 
-  ggplot(aes(weekday, avg_speed)) + 
-  geom_line() +
+plot.speed(df_speed,df_hotedges_april16pt, df_speed_top, wday, median) + 
+  xlab("Day of the week")  +
   scale_x_discrete(limits = c("Domingo", "Segunda", "Terça", "Quarta", "Quinta", 
-    "Sexta", "Sábado")) +
-  ylab("Avg speed km/h")
+    "Sexta", "Sábado")) 
 ```
 
 Speed by day
 
 ```{r echo=FALSE}
-df_hotedges_april16pt %>% 
-  group_by(day =day(time)) %>% 
-  summarise(avg_speed = mean((speed*18)/5)) %>% 
-  ggplot(aes(day, avg_speed)) + 
-  geom_line() +
-  scale_x_continuous(breaks = seq(0,30,1))+
-  ylab("Avg speed km/h")
+plot.speed(df_speed, df_hotedges_april16pt, df_speed_top, day) + 
+  xlab("Day") +
+  scale_x_continuous(breaks = seq(1,30,1)) 
+
 ```
 
 Speed by hour
 ```{r echo=FALSE}
-df_hotedges_april16pt %>% 
-  group_by(hour =hour(time)) %>% 
-  summarise(avg_speed = mean((speed*18)/5)) %>% 
-  ggplot(aes(hour, avg_speed)) + 
-  geom_line() +
-  scale_x_continuous(breaks = seq(0,23,1))+
-  ylab("Avg speed km/h")
+plot.speed(df_speed,df_hotedges_april16pt, df_speed_top, hour) + 
+  xlab("Hour") +
+  scale_x_continuous(breaks = seq(0,23,1)) 
 ```
 
+##
 Number of session per hour
 ```{r echo=FALSE}
 df_hotedges_april16pt %>% 
@@ -600,31 +382,9 @@ df_hotedges_april16pt %>%
   scale_x_continuous(breaks = seq(0,23,1))
 ```
 
-Ways_ids per half hour
+Edges per half hour
 ```{r}
 prueba <- table(cut(filter(df_hotedges_april16pt, day(time) < 7)$time, breaks = "30 mins"))
 plot(prueba, xlab = "date", ylab = "frequency") 
 ```
-
-## Time serie per way_id 
-
-```{r echo=FALSE}
-df_superhotedges_april16pt %>% 
-  filter( way_id == list_osm_edge[3] ) %>% 
-  plot_ly(x= ~time, y= ~(speed*18)/5, color = ~class) %>% 
-  layout(title = paste("Time series of speed for way_id",list_osm_edge[3], sep = " " ),yaxis = list(title="Speed (km/h)"),
-         xaxis = list(title="Date"))
-
-```
-
-```{r}
-filter(df_hotedges_april16pt, way_id == 37141967 ) %>% 
-  group_by(day(time)) %>% 
-  ggplot(aes(x= time, y= (speed*18)/5)) + 
-  geom_line()
-```
-
-
-
-
 
