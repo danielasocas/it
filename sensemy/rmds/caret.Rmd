@@ -1,0 +1,60 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Model 0 
+```{r echo=FALSE}
+varImp(m_tree)
+varImp(m_rf)
+varImp(m_gbm)
+
+summary(results)
+dotplot(results)
+```
+
+## Model 2
+With wday and default tuning 
+
+```{r, echo=FALSE}
+summary(results_2)
+dotPlot(results_2)
+```
+
+
+## Model 3 
+model 2 Tunned with cv 
+
+```{r, echo=FALSE}
+#results_3 <- results 
+summary(results_3)
+
+```
+
+
+## Model 4
+model 4 tunned with cv 
+
+```{r, echo=FALSE}
+results_4 <- results 
+summary(results_4)
+results_4$methods
+
+m_tree_4$finalModel %>% 
+  varImp() 
+
+m_rf_4$finalModel %>% 
+  varImpPlot() 
+
+varImp(m_gbm_4)
+```
+
+
+
+```{r}
+fancyRpartPlot(m_tree_4$finalModel)
+```
+
+
+
+

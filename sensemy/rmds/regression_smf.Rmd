@@ -1,0 +1,93 @@
+---
+title: "Regression SenseMyFEUP April'16"
+output: html_notebook
+---
+```{r}
+
+install.packages("corrgram")
+library(ggcorrplot)
+source("http://www.sthda.com/upload/rquery_cormat.r")
+
+
+dfm_base[,colnames(dfm_base)%in% features] %>% 
+  corrgram( order=TRUE, lower.panel=panel.shade,
+  upper.panel=panel.pts, text.panel=panel.txt,
+  diag.panel=panel.minmax, 
+ 	main="Correlation table with features")
+
+```
+
+
+# Model 0 
+Without any Weather feature. 
+
+## Tree 
+
+```{r echo=FALSE}
+#prp(regtree_0, type = 4)
+fancyRpartPlot(regtree_0)
+regmae_0
+cr0
+```
+
+## Random Forest 
+
+```{r echo=FALSE}
+describe(predrand_0)
+randerr_0
+#importance(mrand_0)
+varImpPlot(mrand_0,main="Feature Relevance Scores")
+```
+
+
+## Mars 
+
+```{r echo=FALSE}
+summary(mars_0)
+mae_mars_0
+```
+
+
+# Marcio  Model 
+Features:
+  *speed
+  *day
+  *hour
+  *wind_speed
+  *temperature
+  *period
+  *heading
+  *middle_lat
+  *middle_lon
+  
+## Tree 
+
+```{r echo=FALSE}
+fancyRpartPlot(regtree_1)
+#prp(regtree_1, type = 4)
+regmae_1
+cr1
+```
+
+
+## Random Forest 
+
+```{r echo=FALSE}
+describe(predrand_1)
+randerr_1
+varImpPlot(mrand_1,main="Feature Relevance Scores")
+```
+
+
+## Mars 
+
+```{r echo=FALSE}
+summary(mars_1)
+mae_mars_1
+```
+
+
+
+
+
+
