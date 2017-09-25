@@ -1,47 +1,50 @@
 ---
-title: "Pre Analysis top 9 edges."
+title: "Pre Analysis - top edges."
 output: html_notebook
 ---
 
 <!-- The datasets to make this notebook are in SenseMyFEUP.Rmd
      The rest of the code is divided: 
           General information: April2016.Rmd 
-          Timeseries functions: timeseries.R
+          Timeseries code: timeseries.R
           
     df_speed_top it is on preanalysis_course.Rmd
 -->
 
+# Introduction 
+
+This report explores the top 9 edges with more sessions from April 2016.
+The goal is to understand this data for later modeling and feature decisions. 
+
+#### Index: 
+
+  * Map.
+  * Number of sessions.
+  * Parking.
+  * Time discretization. 
+  * Speed and intersession time.
+  * State discretization. 
+  
+--------------------------------------------------------------------------------
+# Setting dataframe with top edges in April 2016(vehicules).  
+ Filters: 
+  * No parking edges.
+  * Week days.
+  * Hour between 8hr and 20h.
+  
+Rua Eduardo Silva is divided inthe intersection for better analysis. 
+
 # Map of top points 
 
 ```{r echo=FALSE}
-#m_top9 <- m
-m_top9
+#m_top9
+
+df_sessions_edges_april16pt %>% 
+  subset(way_id %in% df_superhotedges_april16pt$way_id)  %>% 
+  map()
 ```
 
-# Setting dataframe. 
- Filters: 
-  *No parking edges.
-  *Week days
-  *Hour between 8hr and 20h
-```{r echo=FALSE}
-# Setting the dataframe. No weekends and time between 8-20h.
-
-df_superhotedges_april16pt <- df_speed_top
-
-df_superhotedges_april16pt$time <- as.POSIXct(df_superhotedges_april16pt$seconds, origin="1970-01-01")
-
-df_superhotedges_april16pt <- df_superhotedges_april16pt %>% 
-  filter(hour(time) >=8, hour(time)<= 20, wday(time) != 1 , wday(time) != 7) 
-
-
-# Rua Eduardo Silva 2 
-
-df_superhotedges_april16pt[df_superhotedges_april16pt$way_id == 37141970 & df_superhotedges_april16pt$lat >= 41.17755,]$way_id <- 37141970.2
-
-df_superhotedges_april16pt$way_id <- as.factor(df_superhotedges_april16pt$way_id)
-
-```
-
+#
 ## Low speed and Parkings
 
 ```{r}
@@ -87,12 +90,16 @@ df_superhotedges_april16pt %>%
 
 # Time discretization.
 
+# Number of sessions per edge. 
 ```{r}
-df_superhotedges_april16pt %>%
-  group_by( day = hour(time)) %>% 
-  summarise(n=n_distinct(session_id)) %>% 
-  ggplot(aes(x=day, y = n)) +
-  geom_line() 
+df_superhotedges_april16pt %>% 
+  group_by(h = hour(time)) %>%  
+  summarise(n = n_distinct(session_id))  %>% 
+  ggplot(aes(x= h, y = n)) +
+  geom_line() + 
+  scale_x_continuous(breaks = seq(8,20,1)) +
+  xlab("Hour") + 
+  ylab("# sessions")
 ```
 
 

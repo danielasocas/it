@@ -1,48 +1,11 @@
 ---
-title: "Pre Analysis top 7 edges: deciding the course."
+title: "Pre Analysis - top edges - deciding the course."
 output: html_notebook
 ---
 
-# Course of direction per edge.
-```{r echo=FALSE}
-# Adding course to the top 7 edges. 
-
- 
-df_speed_top$course <- 1
-intersection <- 41.17755
-
-#Vertical
-#Rua Roberto Frias 1 & Eduardo Silva 1
-df_speed_top[((df_speed_top$way_id == 37141970 & df_speed_top$lat < intersection) | df_speed_top$way_id == 35145521 ) &
-                 (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median )) > 90 &
-                    (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median )) < 270,]$course <- 2
-
-#Rua Roberto Frias 2 & Eduardo Silva 2
-df_speed_top[((df_speed_top$way_id == 37141970 & df_speed_top$lat > intersection) | df_speed_top$way_id == 316459169) & (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) < 90) | (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) > 270),]$course <- 2  
-               
-
-#Horizontals
-#Rua H. Sousa 1 & H. Sousa 2 
-df_speed_top[(df_speed_top$way_id == 63192525 | df_speed_top$way_id == 106334851) &   (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median )) < 180,]$course <- 2
-
-#Rua Manuel Silva. 
-df_speed_top[df_speed_top$way_id == 35078500  & (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) > 180),]$course <- 2
-
-# Rua de Frei 
-df_speed_top <- df_speed_top %>% 
-  mutate( heading = case_when((way_id == 37141970 | way_id == 35145521) &  course == 2 ~ "S", 
-                              (way_id == 37141970 | way_id == 35145521) &  course == 1 ~ "N",
-                              (way_id == 37141970.2 | way_id == 316459169) &  course == 2 ~ "N", 
-                              (way_id == 37141970.2 | way_id == 316459169) &  course == 1 ~ "S",
-                              (way_id == 63192525 | way_id == 106334851) &  course == 2 ~ "E", 
-                              (way_id == 63192525 | way_id == 106334851) &  course == 1 ~ "W",
-                              way_id == 35078500  &  course == 2 ~ "W", 
-                              way_id == 35078500  &  course == 1 ~ "E",
-                              way_id == 37141967  &  (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) > 180) ~ "W",
-                              way_id == 37141967  &  (ave(df_speed_top$track,df_speed_top$session_id , df_speed_top$segment_id, FUN = median ) <= 180) ~ "E")) 
-
+```{r}
+source("../functions/portomap.R")
 ```
-
 
 #Analysis 
 
@@ -54,9 +17,10 @@ tseries_light2 <- function(index) { df_superhotedges_april16pt %>%
     geom_point(aes(colour = heading), alpha = 1/10) + 
     ylab("Speed(km/h)") + 
     xlab("Date")+ 
-    ggtitle(paste("Time series of speed for way_id:",df_osm_edge_ids[index,2],df_osm_edge_ids[index,1], sep = " " ))}
+    ggtitle(paste("Time series of speed for way_id:",df_osm_edge_ids[index,2],
+                  df_osm_edge_ids[index,1], sep = " " ))}
 
-lapply(1:8, FUN = tseries_light2)
+lapply(1:9, FUN = tseries_light2)
 ```
 
 ### By hour
@@ -64,7 +28,7 @@ lapply(1:8, FUN = tseries_light2)
 df_superhotedges_april16pt %>% 
   group_by(way_id) %>% 
   ggplot(aes(x = hour(time), y= track)) +
-  geom_point(aes(colour = course), alpha = 1/100) +
+  geom_point(aes(colour = factor(course)), alpha = 1/100) +
   facet_wrap(~ way_id)
 ```
 

@@ -5,8 +5,8 @@ author: "Daniela S. Gil"
 ---
 # Intro 
 
-In this report we are focusing on the most frequented edges, all having more than 170 sessions along 
-April 2016. All of this edges are around FEUP. 
+In this report we are focusing on the most frequented edges, all having more than 
+170 sessions along April 2016. All of this edges are around FEUP. 
 
 The data frame to use is: df_superhotedges_april16pt.
     It was created with the df df_speed_top which brings directly all points 
@@ -21,13 +21,7 @@ The data frame to use is: df_superhotedges_april16pt.
     150 sessions have gaps over 5min 
     394 sessions have gaps over 2min 
 
-
-```{r echo=FALSE}
-#Creating a df with all the points in the sessions that pass by SHE 
-df_superhotedges_april16pt_all <- df_edges_april16pt %>% 
-  filter(session_id %in% df_superhotsessions_april16pt)
-
-```
+--------------------------------------------------------------------------------
 
 ```{r echo=FALSE}
 
@@ -82,18 +76,8 @@ list_osm_edge <- df_osm_edge[, 1]
 ```
 
 ```{r}
-ms_1 <- m
+#ms_1 <- m
 ms_1
-m
-```
-
-
-```{r}
-# Map with all points with nº sessions
-#     green: <50, 50< yellow <155, red > 155 
-
-#ms_3 <- m 
-ms_3
 ```
 
 # Intersession time
@@ -477,12 +461,7 @@ f <- df_edges_april16pt %>%
 write.csv(f,"f.csv")
 ```
 
-```{r echo=FALSE}
-df_superhotedges_april16pt %>% 
-  filter( way_id == 35078500 ) %>% 
-  merge(y = df_osm_edge_ids, using = way_id) %>% 
-  
-```
+
 
 
 

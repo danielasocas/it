@@ -20,6 +20,7 @@ not suppose to run all, it is just for guidance and order.
     +  Points.
     +  Sessions.
     +  All info. 
+    +  SenseMyCity, SenseMood
 
 --------------------------------------------------------------------------------
 
@@ -136,10 +137,12 @@ if(! "earth" %in% rownames(installed.packages())){
 if(! "randomForest" %in% rownames(installed.packages())){
   install.packages("randomForest")
 }
-if(! "randomForest" %in% rownames(installed.packages())){
+if(! "pROC" %in% rownames(installed.packages())){
   install.packages("pROC")
 }
-
+if(! "caret" %in% rownames(installed.packages())){
+  install.packages("caret")
+}
 
 library(DMwR)
 library(rpart)
@@ -148,6 +151,7 @@ library(Hmisc)
 library(earth)
 library(randomForest)
 library(pROC)
+library(caret)
 ```
 
 ## Connecting the database.
@@ -159,8 +163,8 @@ pwd <- "psicopatas"
 
 #Database to connect 
 #db <- "sensemyfeup"
-db <- "sensemycity"
-#db <- "moodsensor"
+#db <- "sensemycity"
+db <- "moodsensor"
 
 con <-dbConnect(drv,host='localhost',port='15432',dbname=db,user='danielasocas',
 password=pwd)
@@ -490,7 +494,6 @@ write.xlsx(df_osm_edge, file="df_sessions_edge_osm.xlsx")
 # PART III: only data of April 2016.
 
  Getting data from database, exclusively for April 2016.
-
 ##Points
 All
 ```{r}

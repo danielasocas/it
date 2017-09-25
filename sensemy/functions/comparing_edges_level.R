@@ -2,7 +2,33 @@
 #                              Number of sessions                              #
 ################################################################################
 
-plot.n_sessions <- function(data1, data2, data3, aggregator, size = 14) {
+#------------------------------- Individual -----------------------------------#
+
+plot.nsessions <- function(data, aggregator, size = 14) {
+  # Plots the number of sessions of 3 data frames.
+  #
+  # Args:
+  #   data1: data with all edges.
+  #   agregator: any lubridate agregator e.g: day,wday,hour. To group the data. 
+  #   size: size of the plot font.
+  #
+  # Returns:
+  #   A plot comparing the number of sessions between data1, data2 y data 3
+  #   grouped by the aggregator. 
+  
+  data %>% 
+    group_by(aggregator = aggregator(time)) %>% 
+    summarise(sessions = n_distinct(session_id)) %>% 
+    ggplot(aes(aggregator, sessions)) + 
+    geom_line() +
+    ylab("# Sessions") +
+    theme_bw(base_size = size ) 
+}
+
+
+#------------------------------- Comparing ------------------------------------#
+
+plot.compare_nsessions <- function(data1, data2, data3, aggregator, size = 14) {
   # Plots the number of sessions of 3 data frames.
   #
   # Args:
@@ -37,7 +63,7 @@ plot.n_sessions <- function(data1, data2, data3, aggregator, size = 14) {
 #                                   Speed                                      #
 ################################################################################
 
-plot.speed <- function(data1, data2, data3, aggregator, stat = mean,  
+plot.compare_speed <- function(data1, data2, data3, aggregator, stat = mean,  
                             size = 14) {
   # Plots the number of sessions of 3 data frames.
   #

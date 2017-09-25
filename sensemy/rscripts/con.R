@@ -1,5 +1,5 @@
 #Connect to the database R-PsotgreSQL
-#Daniela Socas, Last modified: 27/04/17
+#Daniela Socas, Last modified: 01/09/17
 
 #Install Packages 
 #install.packages("DBI")
@@ -9,6 +9,10 @@
 library(DBI)
 library(RPostgreSQL)
 
+#--------------- Connecting the database ----------------#
+
+# Connecting Sense My FEUP - DS
+
 drv <- dbDriver("PostgreSQL")
 pwd <- "psicopatas"
 
@@ -16,23 +20,20 @@ pwd <- "psicopatas"
 db <- "sensemyfeup"
 #db <- sensemycity
 
-con <-dbConnect(drv,host='localhost',port='15432',dbname=db,user='danielasocas',
-password=pwd)
+con <-dbConnect(drv,host='localhost',
+                port='15432',
+                dbname=db,
+                user='danielasocas',
+                password=pwd)
 
-#List all tables in the database
-#dbListTables(con )
+# Connecting OpenStreetMap - Marcio Fontes
+pw <- {
+  "y7dWwByZLWso"
+}
 
-#Summary of the Connection.
-#Summary(con)
+drv <- dbDriver("PostgreSQL")
 
-#Get list of all the tables in the database.
-#dbSendQuery(conn,"select * from table_name")
+con_osm <- dbConnect(drv, dbname = "openstreetmap",
+                     host = "localhost", port = 15432,
+                     user = "marciofontes", password = pw)
 
-#Read table in R.
-#table_name<- dbReadTable(conn, "tablen_name")
-
-#Close current query.
-#dbClearResult(dbListResults(conn)[[1]])
-
-#Disconnect database.
-#dbDisconnect(conn)

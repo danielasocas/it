@@ -1,5 +1,7 @@
 ---
 title: "Predictions SenseMyFEUP April'16"
+author: "Daniela S. Gil"
+date: 25-08-2017
 output: html_notebook
 ---
 
@@ -22,6 +24,7 @@ desc_rand1
 importance(rand_1)
 varImpPlot(rand_1,main="Feature Relevance Scores")
 ```
+
 
 ## Regression 
 ### Tree 

@@ -48,7 +48,6 @@ df_edges_april16pt <- df_speed %>%
 ## Intersession times
   This section explores the time between different sessions in the 
 same edge.  
- 
 ### Intersession times and number of sessions.
 ```{r echo=FALSE, eval=FALSE}
 
@@ -334,7 +333,8 @@ plot.n_sessions(df_speed,df_hotedges_april16pt, df_speed_top, hour) +
 
 
 
-## Speeds >50
+
+## Speed >50
 
 ```{r}
 # Speed by way_id and session.\
