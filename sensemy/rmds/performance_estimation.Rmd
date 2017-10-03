@@ -1,0 +1,122 @@
+---
+title: "Performance Estimation"
+output: html_notebook
+---
+
+Notebook to evaluate models with the Performance Estimation tool and then decide
+the best one. 
+
+# StandardFlow
+
+  After running all these different feature combinations we get that:
+  * Model 4 - Randomforest gets the lowest RMSE.
+  RMSE = 12.33673.
+  * Decision trees do not variate much, best RMSE its obtained in some models. 
+  RMSE = 12.47450.
+  * Model 3 gives the lowest RMSE with Mars.
+  RMSE = 12.43340.
+
+Nonetheless, it does not variate much so might not be a significative variance. 
+
+Also we can see with the trees that the heading and edge are the most significative 
+features. 
+
+## Model 0, default 
+  * wday
+  * hour
+  * heading
+  * middle_lat
+  * middle_lon
+
+```{r echo=FALSE}
+rankWorkflows(res_0)
+```
+
+## Model 1, Marcio features. 
+  * wday
+  * hour
+  * heading
+  * middle_lat
+  * middle_lon
+  * wind_speed
+  * temperature
+
+```{r echo=FALSE}
+rankWorkflows(res_1)
+
+```
+
+## Model 2, with chuva in weather only 
+  * wday
+  * hour
+  * heading
+  * middle_lat
+  * middle_lon
+  * chuva
+```{r echo=FALSE}
+rankWorkflows(res_2)
+```
+
+## Model 3, all weather and time discretize. 
+  * wday
+  * period
+  * heading
+  * middle_lat
+  * middle_lon
+  * wind_speed,
+  * temperature
+  * chuva
+  
+```{r echo=FALSE}
+rankWorkflows(res_3)
+fancyRpartPlot(fit_tree_3)
+varImp(fit_tree_3)
+```
+
+
+##  Model 4, all weather with hour. 
+  * wday
+  * hour
+  * heading
+  * middle_lat
+  * middle_lon
+  * wind_speed,
+  * temperature
+  * chuva
+```{r echo=FALSE}
+# res_4 <- performanceEstimation( PredTask(speed ~ ., dfm_test),
+#                                 workflowVariants("standardWF",
+#                                                  learner=c("rpartXse","randomForest","earth")),
+#                                 EstimationTask(metrics=c("mse","rmse"),method=CV(nReps=2,nFolds=5)))
+rankWorkflows(res_4)
+
+```
+
+### Tree 
+
+```{r echo=FALSE}
+fancyRpartPlot(m_tree_4$finalModel)
+
+m_tree_4$finalModel %>% 
+  varImp() 
+
+fancyRpartPlot(fit_tree_5)
+```
+
+
+### Random Forest 
+
+```{r echo=FALSE}
+m_rf_4$finalModel %>% 
+  varImpPlot(main="Feature Relevance Scores") 
+```
+
+
+### Mars 
+
+```{r echo=FALSE}
+summary(mars_4)
+mars_4
+```
+
+# 
