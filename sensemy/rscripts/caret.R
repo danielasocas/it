@@ -1,6 +1,19 @@
 # Daniela Socas Gil
 # Last modified: 19/09/17
 
+#######################################################################
+#                               Modeling                              #
+#######################################################################
+
+dfm_train <- dfm_base %>% 
+  filter(day <= 23)
+dfm_train <- dfm_train[,colnames(dfm_train)%in% features]
+
+dfm_test <- dfm_base %>% 
+  filter(day > 23) 
+dfm_test <- dfm_test[,colnames(dfm_test)%in% features]
+
+
 featurePlot(x=dfm_train[,colnames(dfm_train)%in% features],
             y= dfm_train$speed,
             plot = "pairs")
@@ -20,8 +33,8 @@ sum(is.na(dfm_train))
 # 10-fold cross validation 
 control <- trainControl(method="cv", number=10 )
 
-# 10-fold cross validation repeated 
-control <- trainControl(method="repeatedcv", number=7, repeats = 3)
+# 10-fold cross validation repeated twice
+control <- trainControl(method="repeatedcv", number=5, repeats = 2)
 
 
 #--------------------------- Models -------------------------#
@@ -30,28 +43,42 @@ control <- trainControl(method="repeatedcv", number=7, repeats = 3)
 #-----------------------------------------#
 #              Random Forest              #
 #-----------------------------------------#
-set.seed(128)
+set.seed(1234)
 m_rf <- train(speed ~ ., dfm_train, trControl=control,  importance = TRUE,
               method = 'rf', prox = TRUE)
 m_rf
-m_rf_5 <- m_rf
+m_rf_4 <- m_rf
 varImp(m_rf)
 
 preds_rf <- predict(m_rf_4$finalModel,dfm_test)
 
 str(m_rf, max.level = 1)
 
+
 #-----------------------------------------#
 #                 Tree                    #
 #-----------------------------------------#
-set.seed(128)
-m_tree <- train(speed ~ ., dfm_train, trControl=control, 
+set.seed(1234)
+m_tree_4 <- train(speed ~ ., dfm_train, trControl=control, 
                 method = 'rpart')
-m_tree
+fancyRpartPlot(m_tree_4$finalModel)
 varImp(m_tree)
 m_tree_5 <- m_tree
+plot(m_tree)
 
 preds_tree <- predict(m_tree_4$finalModel,dfm_test)
+m_tree$finalModel
+#------ interactive
+
+fit_tree_5 <- rpartXse(speed ~  . ,
+         data=dfm_train,
+         method="anova",
+         control = rpart.control(minsplit=20, cp=0))
+
+fancyRpartPlot(fit_tree_5)
+new.fit_tree <- prp(fit_tree,snip=TRUE)$obj
+fancyRpartPlot(new.fit_tree)
+fit_tree
 
 #-----------------------------------------#
 #                 GBM                     #
@@ -75,8 +102,7 @@ dotplot(results)
 #--------------------------- PE -------------------------#
 ##############################################################
 
-res_6 <- performanceEstimation(
-  PredTask(speed ~ .,dfm_train),
-  Workflow("standardWF",learner=c("rpart","rf")),
-  EstimationTask(metrics="rmse",method=CV(nReps=1,nFolds=10)))
-summary(res_5)
+res_ <- performanceEstimation( PredTask(speed ~ ., dfm_test),
+                                workflowVariants("standardWF",
+                                                 learner=c("rpartXse","randomForest","earth")),
+                                EstimationTask(metrics=c("mse","rmse"),method=CV(nReps=2,nFolds=5)))
