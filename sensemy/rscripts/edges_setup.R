@@ -60,9 +60,10 @@ df_speed_top[(df_speed_top$way_id == 63192525 | df_speed_top$way_id == 106334851
 df_speed_top[df_speed_top$way_id == 35078500  & (ave(df_speed_top$track,df_speed_top$session_id , 
                                                      df_speed_top$segment_id, FUN = median ) > 180),]$course <- 2
 #Rua  Placido da Costa
-df_speed_top[df_speed_top$way_id == 35078500  & (ave(df_speed_top$track,df_speed_top$session_id , 
-                                                     df_speed_top$segment_id, FUN = median ) > 180),]$course <- 2
+# df_speed_top[df_speed_top$way_id == 35078500  & (ave(df_speed_top$track,df_speed_top$session_id , 
+#                                                      df_speed_top$segment_id, FUN = median ) > 180),]$course <- 2
 
+df_speed_top[df_speed_top$way_id == 35078500,]$course <- 2
 
 # Heading direction. 
 df_speed_top <- df_speed_top %>% 

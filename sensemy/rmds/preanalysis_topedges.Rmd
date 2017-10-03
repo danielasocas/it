@@ -165,6 +165,7 @@ df_super_intersession_april16pt$time <- as.POSIXct(df_super_intersession_april16
 
 ```
 
+Modeling 
 
 ```{r echo=FALSE}
 #Boxplots all 

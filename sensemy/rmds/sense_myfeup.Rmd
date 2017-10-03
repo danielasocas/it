@@ -175,12 +175,12 @@ drv <- dbDriver("PostgreSQL")
 pwd <- "psicopatas"
 
 #Database to connect 
-#db <- "sensemyfeup"
+db <- "sensemyfeup"
 #db <- "sensemycity"
-db <- "moodsensor"
+#db <- "moodsensor"
 
-con <-dbConnect(drv,host='localhost',port='15432',dbname=db,user='danielasocas',
-password=pwd)
+con <-dbConnect(drv,host='localhost',port='15432',dbname=db,user='danielasocas', 
+                password=pwd)
 ```
 
 ```{r echo=FALSE, eval=FALSE}

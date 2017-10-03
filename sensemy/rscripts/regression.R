@@ -203,7 +203,7 @@ regr.eval(dfm_test$speed, regtree,train.y=dfm_train$speed)
 #-----------------------------------------#
 #              Random Forest              #
 #-----------------------------------------#
-set.seed(318)
+set.seed(1234)
 mrand <- randomForest(speed ~ ., dfm_train, importance = TRUE, method = "anova", ntree = 2000)
 
 predrand <- predict(mrand,dfm_test)

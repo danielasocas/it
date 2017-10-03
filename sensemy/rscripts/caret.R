@@ -13,7 +13,7 @@ dfm_test <- dfm_base %>%
   filter(day > 23) 
 dfm_test <- dfm_test[,colnames(dfm_test)%in% features]
 
-
+#Correlation matrix 
 featurePlot(x=dfm_train[,colnames(dfm_train)%in% features],
             y= dfm_train$speed,
             plot = "pairs")
@@ -59,9 +59,10 @@ str(m_rf, max.level = 1)
 #                 Tree                    #
 #-----------------------------------------#
 set.seed(1234)
-m_tree_4 <- train(speed ~ ., dfm_train, trControl=control, 
-                method = 'rpart')
-fancyRpartPlot(m_tree_4$finalModel)
+m_tree <- train(speed ~ ., dfm_train, 
+                  trControl=control, 
+                  method = 'rpart')
+fancyRpartPlot(m_tree$finalModel)
 varImp(m_tree)
 m_tree_5 <- m_tree
 plot(m_tree)
@@ -70,20 +71,22 @@ preds_tree <- predict(m_tree_4$finalModel,dfm_test)
 m_tree$finalModel
 #------ interactive
 
-fit_tree_5 <- rpartXse(speed ~  . ,
+fit_tree_ <- rpartXse(speed ~  . ,
          data=dfm_train,
          method="anova",
-         control = rpart.control(minsplit=20, cp=0))
+         control = rpart.control(minsplit=2
+                                 , cp=0))
 
-fancyRpartPlot(fit_tree_5)
+varImp(fit_tree_)
+
+fancyRpartPlot(fit_tree_)
 new.fit_tree <- prp(fit_tree,snip=TRUE)$obj
 fancyRpartPlot(new.fit_tree)
-fit_tree
 
 #-----------------------------------------#
 #                 GBM                     #
 #-----------------------------------------#
-set.seed(128)
+set.seed(1234)
 m_gbm <- train(speed ~ ., dfm_train, trControl=control, verbose = FALSE,
                 method = 'gbm')
 m_gbm
@@ -106,3 +109,9 @@ res_ <- performanceEstimation( PredTask(speed ~ ., dfm_test),
                                 workflowVariants("standardWF",
                                                  learner=c("rpartXse","randomForest","earth")),
                                 EstimationTask(metrics=c("mse","rmse"),method=CV(nReps=2,nFolds=5)))
+rankWorkflows(res_)
+#--------------------------- Plotting Rf -------------------------#
+##############################################################
+
+#tree_num <- which(m_rf_4$finalModel$forest$ndbigtree == min(m_rf_4$finalModel$forest$ndbigtree))
+#min_rf <- tree_func(final_model = m_rf_4$finalModel, tree_num)
