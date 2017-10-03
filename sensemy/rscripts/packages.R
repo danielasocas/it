@@ -1,5 +1,5 @@
-#Connect to the database R-PsotgreSQL
 #Daniela Socas, Last modified: 01/09/17
+#Connect to the database R-PsotgreSQL
 
 #------------------ BASICS --------------------------
 
@@ -22,6 +22,9 @@ if(! "tidyr" %in% rownames(installed.packages())){
 if(! "magrittr" %in% rownames(installed.packages())){
   install.packages("magrittr")
 }
+if(! "reshape2" %in% rownames(installed.packages())){
+  install.packages("reshape2")
+}
 
 if(! "gridExtra" %in% rownames(installed.packages())){
   install.packages("gridExtra")
@@ -36,6 +39,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(plotly)
+library(reshape2)
 
 #------------------ CONNECTION --------------------------
 
@@ -119,11 +123,24 @@ library(party)
 library(performanceEstimation)
 library(broom)
 
+#------------------ Correlation --------------------------
+
+if(! "corrgram" %in% rownames(installed.packages())){
+  install.packages("corrgram")
+}
+
+library(corrgram)
 
 
-
-
-
+#------------------ Random Forest plot --------------------------
+if(! "ggraph" %in% rownames(installed.packages())){
+  install.packages('ggraph')
+}
+if(! "igraph" %in% rownames(installed.packages())){
+  install.packages('igraph')
+}
+library(ggraph)
+library(igraph)
 
 
 

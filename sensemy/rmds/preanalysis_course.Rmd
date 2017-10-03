@@ -184,4 +184,3 @@ df_superhotedges_april16pt %>%
   ggtitle("Tracks by hour and course (WW)")
 ```
 
-

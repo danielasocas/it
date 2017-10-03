@@ -57,12 +57,21 @@ if(! "gridExtra" %in% rownames(installed.packages())){
 if(! "plotly" %in% rownames(installed.packages())){
   install.packages("plotly")
 }
+if(! "corrgram" %in% rownames(installed.packages())){
+  install.packages("corrgram")
+}
+if(! "reshape2" %in% rownames(installed.packages())){
+  install.packages("reshape2")
+}
 
 library(gridExtra)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(plotly)
+library(corrgram)
+library(reshape2)
+library(magrittr)
 #library(xlsx)
 #library(magrittr)
 #library(lattice)
@@ -143,6 +152,9 @@ if(! "pROC" %in% rownames(installed.packages())){
 if(! "caret" %in% rownames(installed.packages())){
   install.packages("caret")
 }
+if(! "rattle" %in% rownames(installed.packages())){
+  install.packages("rattle")
+}
 
 library(DMwR)
 library(rpart)
@@ -152,6 +164,7 @@ library(earth)
 library(randomForest)
 library(pROC)
 library(caret)
+library(rattle)
 ```
 
 ## Connecting the database.
