@@ -64,7 +64,7 @@ df_speed_top[df_speed_top$way_id == 35078500  & (ave(df_speed_top$track,df_speed
                                                      df_speed_top$segment_id, FUN = median ) > 180),]$course <- 2
 
 
-# Rua de Frei 
+# Heading direction. 
 df_speed_top <- df_speed_top %>% 
   mutate( heading = case_when((way_id == 37141970 | way_id == 35145521) &  course == 2 ~ "S", 
                               (way_id == 37141970 | way_id == 35145521) &  course == 1 ~ "N",
@@ -102,7 +102,7 @@ df_superhotedges_april16pt$time <- as.POSIXct(df_superhotedges_april16pt$seconds
                                               origin="1970-01-01")
 
 df_superhotedges_april16pt <- df_superhotedges_april16pt %>% 
-  filter(hour(time) >=8, hour(time)<= 20, wday(time) != 1 , wday(time) != 7) 
+  filter(hour(time) >=8, hour(time)<= 20, wday(time) != 1 , wday(time) != 7, day(time) != 25) 
 
 
 
@@ -132,6 +132,13 @@ df_superhotedges_april16pt_all[df_superhotedges_april16pt_all$way_id == 37141970
 df_superhotedges_april16pt_sessions$time <- as.POSIXct(df_superhotedges_april16pt_sessions$seconds, 
                                               origin="1970-01-01")
 
+
+#######################################################################
+#                              Speed                                  #
+#######################################################################
+
+# df_superhotedges_april16pt %>% 
+#   mutate(speed =  speed*18/5)
 
 #######################################################################
 #                              Time                                   #
