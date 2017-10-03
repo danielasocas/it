@@ -17,7 +17,7 @@
 # Model 0  
 features <- c("session_id",
               "speed",
-              "day",
+              "wday",
               "hour",
               "period",
               "heading",
@@ -28,7 +28,7 @@ features <- c("session_id",
 # Marcios model 
 features <- c("session_id",
               "speed",
-              "day",
+              "wday",
               "hour",
               "course",
               "wind_speed",
@@ -55,27 +55,47 @@ features <- c("session_id",
 # Model 4
 features <- c("session_id",
               "speed",
-              "day",
               "hour",
               "wday",
               "period",
               "heading",
               "middle_lat",
               "middle_lon",
-#              "wind_speed",
-#              "temperature",
               "chuva")
+
 
 # Model 5
 features <- c("session_id",
               "speed",
-              "day",
-              "hour",
               "wday",
+              "hour",
+              "wind_speed",
+              "temperature",
+              "heading",
+              "chuva")
+
+
+features <- c("session_id",
+              "speed",
+              "wday",
+              "chuva",
+              "course",
+              "wind_speed",
+              "temperature",
               "period",
               "heading",
               "middle_lat",
-              "middle_lon",
+              "middle_lon")
+
+hour
+features <- c("session_id",
+              "speed",
+              "wday",
+              "chuva",
               "wind_speed",
               "temperature",
-              "chuva")
+              "hour",
+              "heading",
+              "middle_lat",
+              "middle_lon")
+
