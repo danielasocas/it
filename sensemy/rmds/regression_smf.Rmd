@@ -3,12 +3,6 @@ title: "Regression SenseMyFEUP April'16"
 output: html_notebook
 ---
 ```{r}
-
-install.packages("corrgram")
-library(ggcorrplot)
-source("http://www.sthda.com/upload/rquery_cormat.r")
-
-
 dfm_base[,colnames(dfm_base)%in% features] %>% 
   corrgram( order=TRUE, lower.panel=panel.shade,
   upper.panel=panel.pts, text.panel=panel.txt,

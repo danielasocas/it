@@ -55,6 +55,10 @@ varImp(m_gbm_4)
 fancyRpartPlot(m_tree_4$finalModel)
 ```
 
+## Fully tree 1 
+ 
+```{r}
 
+```
 
 
