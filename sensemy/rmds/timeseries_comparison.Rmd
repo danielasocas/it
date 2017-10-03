@@ -1,0 +1,179 @@
+---
+title: "Correlation between timeseries"
+date: 26-09-2017
+output: 
+  html_notebook:
+  toc: true
+  
+---
+
+# Introduction 
+
+Correlation analisis between edges divided by course.
+  * 1 = going to FEUP
+  * 2 = leaving FEUP 
+
+--------------------------------------------------------------------------------
+
+## Course to FEUP 
+
+The first thing we can appreciate its the strong correlation between adjacent 
+streets. Specially in the following streets:
+  * Henrique Sousa 1 and 2 
+  * Manuel Pereira with Roberto Frias 1 
+ 
+
+```{r echo=FALSE, warning= FALSE}
+df_superhotedges_april16pt %>% 
+inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  select(ends_with("1")) %>% 
+  corrgram(main = "To Feup (1)", upper.panel=panel.pts, lower.panel=panel.cor)
+
+```
+
+## Course from FEUP 
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  select(ends_with("2")) %>% 
+  corrgram(main = "From Feup (2)", upper.panel=panel.pts, lower.panel=panel.cor)
+
+```
+
+Happens in both ways:
+  * Strong correlation between Henrique Sousa Reis 1 e 2. 
+
+## Opposite course
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  select(contains("Eduardo")) %>% 
+  corrgram(main = "Eduardo Silva", upper.panel=panel.pts, lower.panel=panel.cor)
+
+```
+
+
+```{r echo=FALSE}
+df_superhotedges_april16pt %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  select(contains("Frias")) %>% 
+  corrgram(main = "Roberto Frias", upper.panel=panel.pts, lower.panel=panel.cor)
+
+```
+
+
+# By hour 
+
+## Mannha all
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( hour(time) == 9 | hour(time) == 10) %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  corrgram(main = "All morning", upper.panel=panel.pts, lower.panel=panel.cor)
+```
+
+
+## Night 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( hour(time) == 18 | hour(time) == 19) %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  corrgram(main = "All night", upper.panel=panel.pts, lower.panel=panel.cor)
+```
+
+
+## Other way 
+  
+  Different than at night, you can see some high speeds at Roberto Frias 2. 
+  
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df_st_hotedges_april16pt %>% 
+  filter(start == "OUT", end == "FEUP" | start == "FEUP" & end == "FEUP") %>% 
+  inner_join(df_superhotedges_april16pt, by = "session_id") %>% 
+  filter( hour(time) == 8 | hour(time) == 9) %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id,period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address) %>% 
+  corrgram(main = "To FEUP-morning", upper.panel=panel.pts, lower.panel=panel.cor)
+```
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( hour(time) == 18 | hour(time) == 19) %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  select(ends_with("1")) %>% 
+  corrgram(main= "From FEUP-morning", upper.panel=panel.pts, lower.panel=panel.cor)
+```
+
+  * Frei with Roberto Frias 2 
+  * Roberto Frias 2 with Placido 
+  * Roberto Frias 2 with Roberto Frias 1 
+  * Roberto Frias 1 with Manuel Silva 
+  * HSR 2 with Eduardo Silva 2
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df_st_hotedges_april16pt %>% 
+  filter(start == "FEUP" & end == "OUT" | start == "FEUP" & end == "FEUP") %>% 
+  inner_join(df_superhotedges_april16pt, by = "session_id") %>% 
+  filter( hour(time) == 18 | hour(time) == 19, course == 2) %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id,period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address) %>% 
+  corrgram(main = "From FEUP-night", upper.panel=panel.pts, lower.panel=panel.cor) 
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df_superhotedges_april16pt %>% 
+  filter( hour(time) == 18 | hour(time) == 19) %>% 
+  inner_join(df_osm_edge_ids, by = "way_id") %>% 
+  group_by(address, session_id, course, period = cut(time, breaks="1 hour")) %>%
+  summarise(session_speed = mean(speed*18/5)) %>%  
+  group_by(address, course, period) %>%
+  summarise(avg_speed = mean(session_speed))  %>% 
+  dcast(period~address+course) %>% 
+  select(ends_with("1")) %>% 
+  corrgram(main = "To FEUP-night", upper.panel=panel.pts, lower.panel=panel.cor)
+```
