@@ -145,12 +145,12 @@ dfm_base <- dfm_base %>%
 #                                 Conditions == "Parcialmente Nublado" |
 #                                 Conditions == "Céu Encoberto"  ~ as.factor("nublado"))) 
 dfm_base <- dfm_base %>% 
-   mutate( chuva = case_when(Conditions == "Aguaceiros Fracos de Chuva" |
-                                 Conditions == "Aguaceiros" |
-                                 Conditions == "Chuva" |
-                                 Conditions == "Chuva Forte" |
-                                 Conditions == "Chuva Fraca" |
-                                 Conditions == "Trovoadas com Chuva"  ~ as.numeric(1), 
+   mutate( chuva = case_when(conditions == "Aguaceiros Fracos de Chuva" |
+                                 conditions == "Aguaceiros" |
+                                 conditions == "Chuva" |
+                                 conditions == "Chuva Forte" |
+                                 conditions == "Chuva Fraca" |
+                                 conditions == "Trovoadas com Chuva"  ~ as.numeric(1), 
                                TRUE  ~ as.numeric(0))) 
  
  
@@ -226,7 +226,7 @@ mrand.p_0 <- randomForest(speed ~ ., dfm_train,
 #-----------------------------------------#
 #                 Mars                    #
 #-----------------------------------------#
-set.seed(14)
+set.seed(1234)
 mars <- earth(speed ~ .,dfm_train)
 predmars <- predict(mars,dfm_test)
 mae_mars <- mean(abs(dfm_test$speed - predmars))
@@ -236,6 +236,6 @@ table(predmars,dfm_test$speed)
 
 summary(mars)
 
-mars_0 <- mars
+mars_4 <- mars
 mae_mars_0 <- mae_mars
 
