@@ -145,9 +145,9 @@ df_superhotedges_april16pt_sessions$time <- as.POSIXct(df_superhotedges_april16p
 #                              Time                                   #
 #######################################################################
 
-df_superhotedges_april16pt_all <- mutate(df_superhotedges_april16pt_all, 
-                                     class = ifelse(hour(time) >=7 & 
-                                                      hour(time) <= 20, "day", "night"))
+# df_superhotedges_april16pt_all <- mutate(df_superhotedges_april16pt_all, 
+#                                      class = ifelse(hour(time) >=7 & 
+#                                                       hour(time) <= 20, "day", "night"))
 
 
 

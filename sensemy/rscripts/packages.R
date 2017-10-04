@@ -123,6 +123,14 @@ library(party)
 library(performanceEstimation)
 library(broom)
 
+#------------------ Timeseries --------------------------
+
+# if(! "prophet" %in% rownames(installed.packages())){
+#   install.packages('prophet')
+# }
+# 
+# library(prophet)
+
 #------------------ Correlation --------------------------
 
 if(! "corrgram" %in% rownames(installed.packages())){
@@ -133,15 +141,15 @@ library(corrgram)
 
 
 #------------------ Random Forest plot --------------------------
-if(! "ggraph" %in% rownames(installed.packages())){
-  install.packages('ggraph')
-}
-if(! "igraph" %in% rownames(installed.packages())){
-  install.packages('igraph')
-}
-library(ggraph)
-library(igraph)
-
+# if(! "ggraph" %in% rownames(installed.packages())){
+#   install.packages('ggraph')
+# }
+# if(! "igraph" %in% rownames(installed.packages())){
+#   install.packages('igraph')
+# }
+# library(ggraph)
+# library(igraph)
+# 
 
 
 
