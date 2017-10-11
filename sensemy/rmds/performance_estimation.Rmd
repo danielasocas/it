@@ -119,4 +119,34 @@ summary(mars_4)
 mars_4
 ```
 
-# 
+
+# Testing 
+## Model M
+
+```{r}
+spExp2 <- performanceEstimation(PredTask(speed ~ .,dfm_train,'Model M'),
+                               c(Workflow(wf='standardWF',wfID="standRF",
+                                          learner='randomForest'),
+                                 Workflow(wf='timeseriesWF',wfID="slideRF",
+                                          learner='randomForest',
+                                          type="slide"),
+                               Workflow(wf='timeseriesWF',wfID="growRF",
+                                          learner='randomForest',
+                                          type="grow")),
+                               EstimationTask(metrics=c("mse","rmse"),
+                                              method=MonteCarlo(nReps=2,szTrain=0.75,szTest=0.25)))
+
+```
+ 
+```{r}
+summary(spExp2)
+```
+
+
+
+
+
+
+
+
+

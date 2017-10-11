@@ -35,6 +35,14 @@ features <- c("session_id",
               "middle_lat",
               "middle_lon")
 
+features <- c("session_id",
+              "speed",
+              "time",
+              "wind_speed",
+              "temperature",
+              "middle_lat",
+              "middle_lon")
+
 # Model 2 
 features <- c("session_id",
               "speed",
@@ -81,7 +89,7 @@ features <- c("session_id",
               "middle_lat",
               "middle_lon")
 
-hour
+****hour
 features <- c("session_id",
               "speed",
               "wday",

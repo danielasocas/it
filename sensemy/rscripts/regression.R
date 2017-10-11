@@ -56,16 +56,15 @@ set.seed(1234)
 mrand <- randomForest(speed ~ ., dfm_train, importance = TRUE, method = "anova", ntree = 2000)
 
 predrand <- predict(mrand,dfm_test)
-describe(predrand)
-table(predrand,dfm_test$speed)
-randerr <- mean(abs(dfm_test$speed - predrand))
+describe(preds_rf)
+table(preds_rf ,dfm_test$speed)
+randerr <- mean(abs(dfm_test$speed - preds_rf))
 
-multiclass.roc(dfm_test$speed, predrand)
+multiclass.roc(dfm_test$speed, preds_rf )
 
 mrand_0 <- mrand
 predrand_0 <- predrand
 randerr_0 <- randerr
-
 
 #------------- PARTY ---------------------#
 

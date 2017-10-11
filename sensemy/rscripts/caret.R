@@ -4,6 +4,7 @@
 #######################################################################
 #                               Modeling                              #
 #######################################################################
+dfm_base_tr <- dfm_base[,colnames(dfm_base)%in% features]
 
 dfm_train <- dfm_base %>% 
   filter(day <= 23)
@@ -34,7 +35,7 @@ sum(is.na(dfm_train))
 control <- trainControl(method="cv", number=10 )
 
 # 10-fold cross validation repeated twice
-control <- trainControl(method="repeatedcv", number=5, repeats = 2)
+control <- trainControl(method="repeatedcv", number=4, repeats = 2)
 
 
 #--------------------------- Models -------------------------#
@@ -52,8 +53,9 @@ varImp(m_rf)
 
 preds_rf <- predict(m_rf_4$finalModel,dfm_test)
 
-str(m_rf, max.level = 1)
+randerr <- mean(abs(dfm_test$speed - preds_rf))
 
+str(m_rf, max.level = 1)
 
 #-----------------------------------------#
 #                 Tree                    #
@@ -105,11 +107,57 @@ dotplot(results)
 #--------------------------- PE -------------------------#
 ##############################################################
 
-res_ <- performanceEstimation( PredTask(speed ~ ., dfm_test),
+res_ <- performanceEstimation( PredTask(speed ~ ., dfm_train),
                                 workflowVariants("standardWF",
                                                  learner=c("rpartXse","randomForest","earth")),
-                                EstimationTask(metrics=c("mse","rmse"),method=CV(nReps=2,nFolds=5)))
+                                EstimationTask(dfm_test, metrics=c("mse","rmse"),method=CV(nReps=2,nFolds=5)))
 rankWorkflows(res_)
+?Workflow
+
+# Monte Carlo 
+
+res_all_tree <- performanceEstimation( PredTask(speed ~ ., dfm_base_tr),
+                               c(Workflow(wf='standardWF',wfID="standRF",
+                                          learner="rpartXse"),
+                                 Workflow(wf='timeseriesWF',wfID="slideRF",
+                                          learner="rpartXse",
+                                          type="slide"),
+                                 Workflow(wf='timeseriesWF',wfID="growRF",
+                                          learner="rpartXse",
+                                          type="grow")),
+                               EstimationTask(metrics=c("mse","rmse"),
+                                              method=MonteCarlo(nReps=10,szTrain=0.25,szTest=0.25)))
+
+res_all_rf_v2<- performanceEstimation( PredTask(speed ~ ., dfm_base_tr),
+                                       c(Workflow(wf='standardWF',wfID="standRF",
+                                                  learner="randomForest"),
+                                         Workflow(wf='timeseriesWF',wfID="slideRF",
+                                                  learner="randomForest",
+                                                  type="slide"),
+                                         Workflow(wf='timeseriesWF',wfID="growRF",
+                                                  learner="randomForest",
+                                                  type="grow")),
+                                       EstimationTask(metrics=c("mse","rmse"),
+                                                      method=MonteCarlo(nReps=10,szTrain=0.2,szTest=0.2)))
+
+res_all_mars <- performanceEstimation( PredTask(speed ~ ., dfm_base_tr),
+                                       c(Workflow(wf='standardWF',wfID="standRF",
+                                                  learner="earth"),
+                                         Workflow(wf='timeseriesWF',wfID="slideRF",
+                                                  learner="earth",
+                                                  type="slide"),
+                                         Workflow(wf='timeseriesWF',wfID="growRF",
+                                                  learner="earth",
+                                                  type="grow")),
+                                       EstimationTask(metrics=c("mse","rmse"),
+                                                      method=MonteCarlo(nReps=10,szTrain=0.25,szTest=0.25)))
+
+rankWorkflows(res_all_tree)
+rankWorkflows(res_all_RF)
+rankWorkflows(res_all_mars)
+plot(res_all_1)
+summary(res_all_1)
+
 #--------------------------- Plotting Rf -------------------------#
 ##############################################################
 

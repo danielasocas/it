@@ -457,12 +457,127 @@ GCV 156.5213    RSS 398077.6    GRSq 0.1908456    RSq 0.2069724</code></pre>
 </div>
 </div>
 </div>
-<div id="section" class="section level1">
-<h1></h1>
+<div id="testing" class="section level1">
+<h1>Testing</h1>
+<div id="model-m" class="section level2">
+<h2>Model M</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3BFeHAyIDwtIHBlcmZvcm1hbmNlRXN0aW1hdGlvbihQcmVkVGFzayhzcGVlZCB+IC4sZGZtX3RyYWluLCdNb2RlbCBNJyksXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYyhXb3JrZmxvdyh3Zj0nc3RhbmRhcmRXRicsd2ZJRD1cInN0YW5kUkZcIixcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxlYXJuZXI9J3JhbmRvbUZvcmVzdCcpLFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgV29ya2Zsb3cod2Y9J3RpbWVzZXJpZXNXRicsd2ZJRD1cInNsaWRlUkZcIixcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxlYXJuZXI9J3JhbmRvbUZvcmVzdCcsXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB0eXBlPVwic2xpZGVcIiksXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgV29ya2Zsb3cod2Y9J3RpbWVzZXJpZXNXRicsd2ZJRD1cImdyb3dSRlwiLFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGVhcm5lcj0ncmFuZG9tRm9yZXN0JyxcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHR5cGU9XCJncm93XCIpKSxcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBFc3RpbWF0aW9uVGFzayhtZXRyaWNzPWMoXCJtc2VcIixcInJtc2VcIiksXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbWV0aG9kPU1vbnRlQ2FybG8oblJlcHM9MixzelRyYWluPTAuNzUsc3pUZXN0PTAuMjUpKSlcbmBgYCJ9 -->
+<pre class="r"><code>spExp2 &lt;- performanceEstimation(PredTask(speed ~ .,dfm_train,'Model M'),
+                               c(Workflow(wf='standardWF',wfID=&quot;standRF&quot;,
+                                          learner='randomForest'),
+                                 Workflow(wf='timeseriesWF',wfID=&quot;slideRF&quot;,
+                                          learner='randomForest',
+                                          type=&quot;slide&quot;),
+                               Workflow(wf='timeseriesWF',wfID=&quot;growRF&quot;,
+                                          learner='randomForest',
+                                          type=&quot;grow&quot;)),
+                               EstimationTask(metrics=c(&quot;mse&quot;,&quot;rmse&quot;),
+                                              method=MonteCarlo(nReps=2,szTrain=0.75,szTest=0.25)))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5cbiMjIyMjIFBFUkZPUk1BTkNFIEVTVElNQVRJT04gVVNJTkcgIE1PTlRFIENBUkxPICAjIyMjI1xuXG4qKiBQUkVESUNUSVZFIFRBU0sgOjogTW9kZWwgTVxuXG4rKyBNT0RFTC9XT1JLRkxPVyA6OiBzdGFuZFJGIFxuVGFzayBmb3IgZXN0aW1hdGluZyAgbXNlLHJtc2UgIHVzaW5nXG4yICByZXBldGl0aW9ucyBNb250ZSBDYXJsbyBTaW11bGF0aW9uIHVzaW5nOiBcblx0IHNlZWQgPSAgMTIzNCBcblx0IHRyYWluIHNpemUgPSAgMC43NSB4IE5ST1coRGF0YVNldCkgXG5cdCB0ZXN0IHNpemUgPSAgMC4yNSB4IE5ST1coRGF0YVNldCkgXG5SZXBldGl0aW9uICAxIFxuXHQgc3RhcnQgdGVzdCA9ICAxOTQwIDsgdGVzdCBzaXplID0gIDY0NiBcblJlcGV0aXRpb24gIDIgXG5cdCBzdGFydCB0ZXN0ID0gIDE5NDEgOyB0ZXN0IHNpemUgPSAgNjQ2IFxuXG5cblxuKysgTU9ERUwvV09SS0ZMT1cgOjogc2xpZGVSRiBcblRhc2sgZm9yIGVzdGltYXRpbmcgIG1zZSxybXNlICB1c2luZ1xuMiAgcmVwZXRpdGlvbnMgTW9udGUgQ2FybG8gU2ltdWxhdGlvbiB1c2luZzogXG5cdCBzZWVkID0gIDEyMzQgXG5cdCB0cmFpbiBzaXplID0gIDAuNzUgeCBOUk9XKERhdGFTZXQpIFxuXHQgdGVzdCBzaXplID0gIDAuMjUgeCBOUk9XKERhdGFTZXQpIFxuUmVwZXRpdGlvbiAgMSBcblx0IHN0YXJ0IHRlc3QgPSAgMTk0MCA7IHRlc3Qgc2l6ZSA9ICA2NDYgXG5SZXBldGl0aW9uICAyIFxuXHQgc3RhcnQgdGVzdCA9ICAxOTQxIDsgdGVzdCBzaXplID0gIDY0NiBcblxuXG5cbisrIE1PREVML1dPUktGTE9XIDo6IGdyb3dSRiBcblRhc2sgZm9yIGVzdGltYXRpbmcgIG1zZSxybXNlICB1c2luZ1xuMiAgcmVwZXRpdGlvbnMgTW9udGUgQ2FybG8gU2ltdWxhdGlvbiB1c2luZzogXG5cdCBzZWVkID0gIDEyMzQgXG5cdCB0cmFpbiBzaXplID0gIDAuNzUgeCBOUk9XKERhdGFTZXQpIFxuXHQgdGVzdCBzaXplID0gIDAuMjUgeCBOUk9XKERhdGFTZXQpIFxuUmVwZXRpdGlvbiAgMSBcblx0IHN0YXJ0IHRlc3QgPSAgMTk0MCA7IHRlc3Qgc2l6ZSA9ICA2NDYgXG5SZXBldGl0aW9uICAyIFxuXHQgc3RhcnQgdGVzdCA9ICAxOTQxIDsgdGVzdCBzaXplID0gIDY0NiBcbiJ9 -->
+<pre><code>
+
+##### PERFORMANCE ESTIMATION USING  MONTE CARLO  #####
+
+** PREDICTIVE TASK :: Model M
+
+++ MODEL/WORKFLOW :: standRF 
+Task for estimating  mse,rmse  using
+2  repetitions Monte Carlo Simulation using: 
+     seed =  1234 
+     train size =  0.75 x NROW(DataSet) 
+     test size =  0.25 x NROW(DataSet) 
+Repetition  1 
+     start test =  1940 ; test size =  646 
+Repetition  2 
+     start test =  1941 ; test size =  646 
+
+
+
+++ MODEL/WORKFLOW :: slideRF 
+Task for estimating  mse,rmse  using
+2  repetitions Monte Carlo Simulation using: 
+     seed =  1234 
+     train size =  0.75 x NROW(DataSet) 
+     test size =  0.25 x NROW(DataSet) 
+Repetition  1 
+     start test =  1940 ; test size =  646 
+Repetition  2 
+     start test =  1941 ; test size =  646 
+
+
+
+++ MODEL/WORKFLOW :: growRF 
+Task for estimating  mse,rmse  using
+2  repetitions Monte Carlo Simulation using: 
+     seed =  1234 
+     train size =  0.75 x NROW(DataSet) 
+     test size =  0.25 x NROW(DataSet) 
+Repetition  1 
+     start test =  1940 ; test size =  646 
+Repetition  2 
+     start test =  1941 ; test size =  646 </code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3VtbWFyeShzcEV4cDIpXG5gYGAifQ== -->
+<pre class="r"><code>summary(spExp2)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG49PSBTdW1tYXJ5IG9mIGEgIE1vbnRlIENhcmxvIFBlcmZvcm1hbmNlIEVzdGltYXRpb24gRXhwZXJpbWVudCA9PVxuXG5UYXNrIGZvciBlc3RpbWF0aW5nICBtc2Uscm1zZSAgdXNpbmdcbjIgIHJlcGV0aXRpb25zIE1vbnRlIENhcmxvIFNpbXVsYXRpb24gdXNpbmc6IFxuXHQgc2VlZCA9ICAxMjM0IFxuXHQgdHJhaW4gc2l6ZSA9ICAwLjc1IHggTlJPVyhEYXRhU2V0KSBcblx0IHRlc3Qgc2l6ZSA9ICAwLjI1IHggTlJPVyhEYXRhU2V0KSBcblxuKiBQcmVkaWN0aXZlIFRhc2tzIDo6ICBNb2RlbCBNXG4qIFdvcmtmbG93cyAgOjogIHN0YW5kUkYsIHNsaWRlUkYsIGdyb3dSRiBcblxuLT4gVGFzazogIE1vZGVsIE1cbiAgKldvcmtmbG93OiBzdGFuZFJGIFxuICAgICAgICAgICAgICAgIG1zZSAgICAgICAgcm1zZVxuYXZnICAgICAxODkuODYzMTI2NSAxMy43NzkwNzI0OFxuc3RkICAgICAgIDAuNjYxMzI2NSAgMC4wMjM5OTc1MFxubWVkICAgICAxODkuODYzMTI2NSAxMy43NzkwNzI0OFxuaXFyICAgICAgIDAuNDY3NjI4NCAgMC4wMTY5Njg3OVxubWluICAgICAxODkuMzk1NDk4MCAxMy43NjIxMDM2OVxubWF4ICAgICAxOTAuMzMwNzU0OSAxMy43OTYwNDEyOFxuaW52YWxpZCAgIDAuMDAwMDAwMCAgMC4wMDAwMDAwMFxuXG4gICpXb3JrZmxvdzogc2xpZGVSRiBcbiAgICAgICAgICAgICAgICAgbXNlICAgICAgICAgcm1zZVxuYXZnICAgICAxODguMzI5MzUxODAgMS4zNzIzMzFlKzAxXG5zdGQgICAgICAgMC4wMjM3MTI0NyA4LjYzOTQ4M2UtMDRcbm1lZCAgICAgMTg4LjMyOTM1MTgwIDEuMzcyMzMxZSswMVxuaXFyICAgICAgIDAuMDE2NzY3MjUgNi4xMDkwMzdlLTA0XG5taW4gICAgIDE4OC4zMTI1ODQ1NSAxLjM3MjI3MGUrMDFcbm1heCAgICAgMTg4LjM0NjExOTA1IDEuMzcyMzkzZSswMVxuaW52YWxpZCAgIDAuMDAwMDAwMDAgMC4wMDAwMDBlKzAwXG5cbiAgKldvcmtmbG93OiBncm93UkYgXG4gICAgICAgICAgICAgICAgIG1zZSAgICAgICAgIHJtc2VcbmF2ZyAgICAgMTg4LjMyOTM1MTgwIDEuMzcyMzMxZSswMVxuc3RkICAgICAgIDAuMDIzNzEyNDcgOC42Mzk0ODNlLTA0XG5tZWQgICAgIDE4OC4zMjkzNTE4MCAxLjM3MjMzMWUrMDFcbmlxciAgICAgICAwLjAxNjc2NzI1IDYuMTA5MDM3ZS0wNFxubWluICAgICAxODguMzEyNTg0NTUgMS4zNzIyNzBlKzAxXG5tYXggICAgIDE4OC4zNDYxMTkwNSAxLjM3MjM5M2UrMDFcbmludmFsaWQgICAwLjAwMDAwMDAwIDAuMDAwMDAwZSswMFxuIn0= -->
+<pre><code>
+== Summary of a  Monte Carlo Performance Estimation Experiment ==
+
+Task for estimating  mse,rmse  using
+2  repetitions Monte Carlo Simulation using: 
+     seed =  1234 
+     train size =  0.75 x NROW(DataSet) 
+     test size =  0.25 x NROW(DataSet) 
+
+* Predictive Tasks ::  Model M
+* Workflows  ::  standRF, slideRF, growRF 
+
+-&gt; Task:  Model M
+  *Workflow: standRF 
+                mse        rmse
+avg     189.8631265 13.77907248
+std       0.6613265  0.02399750
+med     189.8631265 13.77907248
+iqr       0.4676284  0.01696879
+min     189.3954980 13.76210369
+max     190.3307549 13.79604128
+invalid   0.0000000  0.00000000
+
+  *Workflow: slideRF 
+                 mse         rmse
+avg     188.32935180 1.372331e+01
+std       0.02371247 8.639483e-04
+med     188.32935180 1.372331e+01
+iqr       0.01676725 6.109037e-04
+min     188.31258455 1.372270e+01
+max     188.34611905 1.372393e+01
+invalid   0.00000000 0.000000e+00
+
+  *Workflow: growRF 
+                 mse         rmse
+avg     188.32935180 1.372331e+01
+std       0.02371247 8.639483e-04
+med     188.32935180 1.372331e+01
+iqr       0.01676725 6.109037e-04
+min     188.31258455 1.372270e+01
+max     188.34611905 1.372393e+01
+invalid   0.00000000 0.000000e+00</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 </div>
+</div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUGVyZm9ybWFuY2UgRXN0aW1hdGlvbiIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKTm90ZWJvb2sgdG8gZXZhbHVhdGUgbW9kZWxzIHdpdGggdGhlIFBlcmZvcm1hbmNlIEVzdGltYXRpb24gdG9vbCBhbmQgdGhlbiBkZWNpZGUKdGhlIGJlc3Qgb25lLiAKCiMgU3RhbmRhcmRGbG93CgogIEFmdGVyIHJ1bm5pbmcgYWxsIHRoZXNlIGRpZmZlcmVudCBmZWF0dXJlIGNvbWJpbmF0aW9ucyB3ZSBnZXQgdGhhdDoKICAqIE1vZGVsIDQgLSBSYW5kb21mb3Jlc3QgZ2V0cyB0aGUgbG93ZXN0IFJNU0UuCiAgUk1TRSA9IDEyLjMzNjczLgogICogRGVjaXNpb24gdHJlZXMgZG8gbm90IHZhcmlhdGUgbXVjaCwgYmVzdCBSTVNFIGl0cyBvYnRhaW5lZCBpbiBzb21lIG1vZGVscy4gCiAgUk1TRSA9IDEyLjQ3NDUwLgogICogTW9kZWwgMyBnaXZlcyB0aGUgbG93ZXN0IFJNU0Ugd2l0aCBNYXJzLgogIFJNU0UgPSAxMi40MzM0MC4KCk5vbmV0aGVsZXNzLCBpdCBkb2VzIG5vdCB2YXJpYXRlIG11Y2ggc28gbWlnaHQgbm90IGJlIGEgc2lnbmlmaWNhdGl2ZSB2YXJpYW5jZS4gCgpBbHNvIHdlIGNhbiBzZWUgd2l0aCB0aGUgdHJlZXMgdGhhdCB0aGUgaGVhZGluZyBhbmQgZWRnZSBhcmUgdGhlIG1vc3Qgc2lnbmlmaWNhdGl2ZSAKZmVhdHVyZXMuIAoKIyMgTW9kZWwgMCwgZGVmYXVsdCAKICAqIHdkYXkKICAqIGhvdXIKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KCmBgYHtyIGVjaG89RkFMU0V9CnJhbmtXb3JrZmxvd3MocmVzXzApCmBgYAoKIyMgTW9kZWwgMSwgTWFyY2lvIGZlYXR1cmVzLiAKICAqIHdkYXkKICAqIGhvdXIKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KICAqIHdpbmRfc3BlZWQKICAqIHRlbXBlcmF0dXJlCgpgYGB7ciBlY2hvPUZBTFNFfQpyYW5rV29ya2Zsb3dzKHJlc18xKQoKYGBgCgojIyBNb2RlbCAyLCB3aXRoIGNodXZhIGluIHdlYXRoZXIgb25seSAKICAqIHdkYXkKICAqIGhvdXIKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KICAqIGNodXZhCmBgYHtyIGVjaG89RkFMU0V9CnJhbmtXb3JrZmxvd3MocmVzXzIpCmBgYAoKIyMgTW9kZWwgMywgYWxsIHdlYXRoZXIgYW5kIHRpbWUgZGlzY3JldGl6ZS4gCiAgKiB3ZGF5CiAgKiBwZXJpb2QKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KICAqIHdpbmRfc3BlZWQsCiAgKiB0ZW1wZXJhdHVyZQogICogY2h1dmEKICAKYGBge3IgZWNobz1GQUxTRX0KcmFua1dvcmtmbG93cyhyZXNfMykKZmFuY3lScGFydFBsb3QoZml0X3RyZWVfMykKdmFySW1wKGZpdF90cmVlXzMpCmBgYAoKCiMjICBNb2RlbCA0LCBhbGwgd2VhdGhlciB3aXRoIGhvdXIuIAogICogd2RheQogICogaG91cgogICogaGVhZGluZwogICogbWlkZGxlX2xhdAogICogbWlkZGxlX2xvbgogICogd2luZF9zcGVlZCwKICAqIHRlbXBlcmF0dXJlCiAgKiBjaHV2YQpgYGB7ciBlY2hvPUZBTFNFfQojIHJlc180IDwtIHBlcmZvcm1hbmNlRXN0aW1hdGlvbiggUHJlZFRhc2soc3BlZWQgfiAuLCBkZm1fdGVzdCksCiMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB3b3JrZmxvd1ZhcmlhbnRzKCJzdGFuZGFyZFdGIiwKIyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGVhcm5lcj1jKCJycGFydFhzZSIsInJhbmRvbUZvcmVzdCIsImVhcnRoIikpLAojICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgRXN0aW1hdGlvblRhc2sobWV0cmljcz1jKCJtc2UiLCJybXNlIiksbWV0aG9kPUNWKG5SZXBzPTIsbkZvbGRzPTUpKSkKcmFua1dvcmtmbG93cyhyZXNfNCkKCmBgYAoKIyMjIFRyZWUgCgpgYGB7ciBlY2hvPUZBTFNFfQpmYW5jeVJwYXJ0UGxvdChtX3RyZWVfNCRmaW5hbE1vZGVsKQoKbV90cmVlXzQkZmluYWxNb2RlbCAlPiUgCiAgdmFySW1wKCkgCgpmYW5jeVJwYXJ0UGxvdChmaXRfdHJlZV81KQpgYGAKCgojIyMgUmFuZG9tIEZvcmVzdCAKCmBgYHtyIGVjaG89RkFMU0V9Cm1fcmZfNCRmaW5hbE1vZGVsICU+JSAKICB2YXJJbXBQbG90KG1haW49IkZlYXR1cmUgUmVsZXZhbmNlIFNjb3JlcyIpIApgYGAKCgojIyMgTWFycyAKCmBgYHtyIGVjaG89RkFMU0V9CnN1bW1hcnkobWFyc180KQptYXJzXzQKYGBgCgojIA==</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiUGVyZm9ybWFuY2UgRXN0aW1hdGlvbiIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKTm90ZWJvb2sgdG8gZXZhbHVhdGUgbW9kZWxzIHdpdGggdGhlIFBlcmZvcm1hbmNlIEVzdGltYXRpb24gdG9vbCBhbmQgdGhlbiBkZWNpZGUKdGhlIGJlc3Qgb25lLiAKCiMgU3RhbmRhcmRGbG93CgogIEFmdGVyIHJ1bm5pbmcgYWxsIHRoZXNlIGRpZmZlcmVudCBmZWF0dXJlIGNvbWJpbmF0aW9ucyB3ZSBnZXQgdGhhdDoKICAqIE1vZGVsIDQgLSBSYW5kb21mb3Jlc3QgZ2V0cyB0aGUgbG93ZXN0IFJNU0UuCiAgUk1TRSA9IDEyLjMzNjczLgogICogRGVjaXNpb24gdHJlZXMgZG8gbm90IHZhcmlhdGUgbXVjaCwgYmVzdCBSTVNFIGl0cyBvYnRhaW5lZCBpbiBzb21lIG1vZGVscy4gCiAgUk1TRSA9IDEyLjQ3NDUwLgogICogTW9kZWwgMyBnaXZlcyB0aGUgbG93ZXN0IFJNU0Ugd2l0aCBNYXJzLgogIFJNU0UgPSAxMi40MzM0MC4KCk5vbmV0aGVsZXNzLCBpdCBkb2VzIG5vdCB2YXJpYXRlIG11Y2ggc28gbWlnaHQgbm90IGJlIGEgc2lnbmlmaWNhdGl2ZSB2YXJpYW5jZS4gCgpBbHNvIHdlIGNhbiBzZWUgd2l0aCB0aGUgdHJlZXMgdGhhdCB0aGUgaGVhZGluZyBhbmQgZWRnZSBhcmUgdGhlIG1vc3Qgc2lnbmlmaWNhdGl2ZSAKZmVhdHVyZXMuIAoKIyMgTW9kZWwgMCwgZGVmYXVsdCAKICAqIHdkYXkKICAqIGhvdXIKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KCmBgYHtyIGVjaG89RkFMU0V9CnJhbmtXb3JrZmxvd3MocmVzXzApCmBgYAoKIyMgTW9kZWwgMSwgTWFyY2lvIGZlYXR1cmVzLiAKICAqIHdkYXkKICAqIGhvdXIKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KICAqIHdpbmRfc3BlZWQKICAqIHRlbXBlcmF0dXJlCgpgYGB7ciBlY2hvPUZBTFNFfQpyYW5rV29ya2Zsb3dzKHJlc18xKQoKYGBgCgojIyBNb2RlbCAyLCB3aXRoIGNodXZhIGluIHdlYXRoZXIgb25seSAKICAqIHdkYXkKICAqIGhvdXIKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KICAqIGNodXZhCmBgYHtyIGVjaG89RkFMU0V9CnJhbmtXb3JrZmxvd3MocmVzXzIpCmBgYAoKIyMgTW9kZWwgMywgYWxsIHdlYXRoZXIgYW5kIHRpbWUgZGlzY3JldGl6ZS4gCiAgKiB3ZGF5CiAgKiBwZXJpb2QKICAqIGhlYWRpbmcKICAqIG1pZGRsZV9sYXQKICAqIG1pZGRsZV9sb24KICAqIHdpbmRfc3BlZWQsCiAgKiB0ZW1wZXJhdHVyZQogICogY2h1dmEKICAKYGBge3IgZWNobz1GQUxTRX0KcmFua1dvcmtmbG93cyhyZXNfMykKZmFuY3lScGFydFBsb3QoZml0X3RyZWVfMykKdmFySW1wKGZpdF90cmVlXzMpCmBgYAoKCiMjICBNb2RlbCA0LCBhbGwgd2VhdGhlciB3aXRoIGhvdXIuIAogICogd2RheQogICogaG91cgogICogaGVhZGluZwogICogbWlkZGxlX2xhdAogICogbWlkZGxlX2xvbgogICogd2luZF9zcGVlZCwKICAqIHRlbXBlcmF0dXJlCiAgKiBjaHV2YQpgYGB7ciBlY2hvPUZBTFNFfQojIHJlc180IDwtIHBlcmZvcm1hbmNlRXN0aW1hdGlvbiggUHJlZFRhc2soc3BlZWQgfiAuLCBkZm1fdGVzdCksCiMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB3b3JrZmxvd1ZhcmlhbnRzKCJzdGFuZGFyZFdGIiwKIyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGVhcm5lcj1jKCJycGFydFhzZSIsInJhbmRvbUZvcmVzdCIsImVhcnRoIikpLAojICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgRXN0aW1hdGlvblRhc2sobWV0cmljcz1jKCJtc2UiLCJybXNlIiksbWV0aG9kPUNWKG5SZXBzPTIsbkZvbGRzPTUpKSkKcmFua1dvcmtmbG93cyhyZXNfNCkKCmBgYAoKIyMjIFRyZWUgCgpgYGB7ciBlY2hvPUZBTFNFfQpmYW5jeVJwYXJ0UGxvdChtX3RyZWVfNCRmaW5hbE1vZGVsKQoKbV90cmVlXzQkZmluYWxNb2RlbCAlPiUgCiAgdmFySW1wKCkgCgpmYW5jeVJwYXJ0UGxvdChmaXRfdHJlZV81KQpgYGAKCgojIyMgUmFuZG9tIEZvcmVzdCAKCmBgYHtyIGVjaG89RkFMU0V9Cm1fcmZfNCRmaW5hbE1vZGVsICU+JSAKICB2YXJJbXBQbG90KG1haW49IkZlYXR1cmUgUmVsZXZhbmNlIFNjb3JlcyIpIApgYGAKCgojIyMgTWFycyAKCmBgYHtyIGVjaG89RkFMU0V9CnN1bW1hcnkobWFyc180KQptYXJzXzQKYGBgCgoKIyBUZXN0aW5nIAojIyBNb2RlbCBNCgpgYGB7cn0Kc3BFeHAyIDwtIHBlcmZvcm1hbmNlRXN0aW1hdGlvbihQcmVkVGFzayhzcGVlZCB+IC4sZGZtX3RyYWluLCdNb2RlbCBNJyksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjKFdvcmtmbG93KHdmPSdzdGFuZGFyZFdGJyx3ZklEPSJzdGFuZFJGIiwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGVhcm5lcj0ncmFuZG9tRm9yZXN0JyksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFdvcmtmbG93KHdmPSd0aW1lc2VyaWVzV0YnLHdmSUQ9InNsaWRlUkYiLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZWFybmVyPSdyYW5kb21Gb3Jlc3QnLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB0eXBlPSJzbGlkZSIpLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgV29ya2Zsb3cod2Y9J3RpbWVzZXJpZXNXRicsd2ZJRD0iZ3Jvd1JGIiwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGVhcm5lcj0ncmFuZG9tRm9yZXN0JywKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgdHlwZT0iZ3JvdyIpKSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIEVzdGltYXRpb25UYXNrKG1ldHJpY3M9YygibXNlIiwicm1zZSIpLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbWV0aG9kPU1vbnRlQ2FybG8oblJlcHM9MixzelRyYWluPTAuNzUsc3pUZXN0PTAuMjUpKSkKCmBgYAogCmBgYHtyfQpzdW1tYXJ5KHNwRXhwMikKYGBgCgoKCgoKCgoKCg==</div>
 
 
 
