@@ -1,0 +1,54 @@
+---
+title: "Weather information April 2016"
+output: html_notebook
+---
+It makes sense that the rain 
+
+```{r}
+df_wu_features %>% 
+  filter(wday(DateUTC) != 1, wday(DateUTC) != 7) %>% 
+   mutate( chuva = case_when(conditions == "Aguaceiros Fracos de Chuva" |
+                                 conditions == "Aguaceiros" |
+                                 conditions == "Chuva" |
+                                 conditions == "Chuva Forte" |
+                                 conditions == "Chuva Fraca" |
+                                 conditions == "Trovoadas Fracas e Chuva" |
+                                 conditions == "Trovoadas com Chuva"  ~ as.numeric(1), 
+                               TRUE  ~ as.numeric(0))) %>% 
+  ggplot(aes(x=factor(chuva))) + 
+  geom_bar(aes(y = ((..count..)/sum(..count..)), fill = conditions)) +
+  geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))),
+            stat = "count", vjust = -0.25) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Monday-Friday weather April 2016", y = "Percent", x = "Rain")
+  
+  plot_ly( x= ~as.factor(chuva), type = 'histogram', name = "Weather")
+```
+
+```{r}
+df_wu_features %>% 
+  filter(wday(DateUTC) != 1, wday(DateUTC) != 7) %>% 
+  ggplot(aes(as.POSIXct(DateUTC), temperature)) + 
+  geom_line()  
+```
+```{r}
+df_wu_features %>% 
+  filter(wday(DateUTC) != 1, wday(DateUTC) != 7) %>% 
+  ggplot(aes(as.POSIXct(DateUTC), wind_speed)) + 
+  geom_line() 
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
