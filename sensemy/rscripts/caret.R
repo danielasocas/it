@@ -6,17 +6,19 @@
 #######################################################################
 dfm_base_tr <- dfm_base[,colnames(dfm_base)%in% features]
 
-dfm_train <- dfm_base %>% 
+# If doing Holdout  
+
+dfm_train <- dfm_base %>%
   filter(day <= 23)
 dfm_train <- dfm_train[,colnames(dfm_train)%in% features]
 
-dfm_test <- dfm_base %>% 
-  filter(day > 23) 
+dfm_test <- dfm_base %>%
+  filter(day > 23)
 dfm_test <- dfm_test[,colnames(dfm_test)%in% features]
 
 #Correlation matrix 
-featurePlot(x=dfm_train[,colnames(dfm_train)%in% features],
-            y= dfm_train$speed,
+featurePlot(x=dfm_base[,colnames(dfm_base)%in% features],
+            y= dfm_base$speed,
             plot = "pairs")
 
 #######################################################################
@@ -37,6 +39,26 @@ control <- trainControl(method="cv", number=10 )
 # 10-fold cross validation repeated twice
 control <- trainControl(method="repeatedcv", number=4, repeats = 2)
 
+# Monte Carlo, growing window. 
+control <- trainControl(method = "timeslice",
+                           initialWindow = as.integer(0.25*nrow(dfm_base_tr)),
+                           horizon = as.integer(0.25*nrow(dfm_base_tr)),
+                           fixedWindow = FALSE,
+                           allowParallel = TRUE,
+                           seeds = seeds)
+
+tuneLength.num <- 3
+
+#### creating sampling seeds ####
+set.seed(1234)
+seeds <- vector(mode = "list", length = 1661)
+for(i in 1:1660) seeds[[i]] <- sample.int(1000, 3)
+
+## For the last model:
+seeds[[1661]] <- sample.int(1000, 1)
+
+# Parallel processing 
+registerDoParallel(cores= 2)
 
 #--------------------------- Models -------------------------#
 ##############################################################
@@ -44,40 +66,53 @@ control <- trainControl(method="repeatedcv", number=4, repeats = 2)
 #-----------------------------------------#
 #              Random Forest              #
 #-----------------------------------------#
-set.seed(1234)
-m_rf <- train(speed ~ ., dfm_train, trControl=control,  importance = TRUE,
-              method = 'rf', prox = TRUE)
-m_rf
-m_rf_4 <- m_rf
-varImp(m_rf)
 
-preds_rf <- predict(m_rf_4$finalModel,dfm_test)
+rf.mod <- train(speed ~ ., 
+                dfm_base_tr, 
+                method = 'rf',
+                importance = TRUE,
+                trControl=control,
+                tuneLength=tuneLength.num )
 
-randerr <- mean(abs(dfm_test$speed - preds_rf))
+rf.mod <- rf.mod
+varImp(rf.mod)
 
-str(m_rf, max.level = 1)
+rf.preds <- predict(rf.mod$finalModel, dfm_test)
+randerr <- mean(abs(dfm_test$speed - rf.preds))
+str(rd.mod, max.level = 1)
 
 #-----------------------------------------#
 #                 Tree                    #
 #-----------------------------------------#
-set.seed(1234)
-m_tree <- train(speed ~ ., dfm_train, 
+
+tree.mod <- train(speed ~ ., 
+                  dfm_base_tr, 
+                  method = 'rpart',
                   trControl=control, 
-                  method = 'rpart')
-fancyRpartPlot(m_tree$finalModel)
-varImp(m_tree)
-m_tree_5 <- m_tree
+                  tuneLength=tuneLength.num)
+
+party.mod <- train(speed ~ .,
+                   data = dfm_base_tr,
+                   method = "ctree",
+                   trControl =  control,
+                   tuneLength=tuneLength.num)
+
+fancyRpartPlot(tree.mod$finalModel)
+varImp(tree.mod)
 plot(m_tree)
 
-preds_tree <- predict(m_tree_4$finalModel,dfm_test)
-m_tree$finalModel
+
+tree.preds <- predict(tree.mod$finalModel,dfm_test)
+tree.mod$finalModel
+
+tree_v1.mod <- tree.mod
+
 #------ interactive
 
 fit_tree_ <- rpartXse(speed ~  . ,
-         data=dfm_train,
+         data=dfm_base_tr,
          method="anova",
-         control = rpart.control(minsplit=2
-                                 , cp=0))
+         control = rpart.control(minsplit=2, cp=0))
 
 varImp(fit_tree_)
 
@@ -88,75 +123,50 @@ fancyRpartPlot(new.fit_tree)
 #-----------------------------------------#
 #                 GBM                     #
 #-----------------------------------------#
-set.seed(1234)
-m_gbm <- train(speed ~ ., dfm_train, trControl=control, verbose = FALSE,
-                method = 'gbm')
-m_gbm
-varImp(m_gbm)
-m_gbm_5 <- m_gbm
 
-preds_gbm <- predict(m_gbm_4$finalModel,dfm_test)
+gbm.mod <- train(speed ~ ., 
+               dfm_base_tr, 
+               method = 'gbm',
+               trControl=control,
+               tuneLength=tuneLength.num,
+               verbose = FALSE)
+        
+gbm.mod
+varImp(gbm.mod)
 
+gbm.preds <- predict(gbm.mod$finalModel,dfm_test)
+gbm_v1.mod <- gbm.mod
+
+#-----------------------------------------#
+#                 MARS                    #
+#-----------------------------------------#
+
+mars.mod <- train(speed ~ ., 
+                 dfm_base_tr, 
+                 method = 'earth',
+                 trControl=control,
+                 tuneLength=tuneLength.num)
+
+mars.mod
 #--------------------------- Results -------------------------#
 ##############################################################
-results <- resamples(list(cart=m_tree, rf=m_rf, gbm = m_gbm))
-results_5 <- results
+results_ <- resamples(list( rf=rf.mod, repart = tree.mod, gbm=gbm.mod))
+
+results <- resamples(list(mars=mars.mod,
+                          gbm=gbm.mod,
+                          rf=rf.mod))
+#ss <- 
 summary(results)
-dotplot(results)
 
-#--------------------------- PE -------------------------#
-##############################################################
+trellis.par.set(caretTheme())
+dotplot(results, metric = "RMSE")
 
-res_ <- performanceEstimation( PredTask(speed ~ ., dfm_train),
-                                workflowVariants("standardWF",
-                                                 learner=c("rpartXse","randomForest","earth")),
-                                EstimationTask(dfm_test, metrics=c("mse","rmse"),method=CV(nReps=2,nFolds=5)))
-rankWorkflows(res_)
-?Workflow
 
-# Monte Carlo 
+results_tree <- resamples(list(rpart=tree.mod,
+                          party=party.mod))
+summary(results_tree)
+dotplot(results, metric = "RMSE")
 
-res_all_tree <- performanceEstimation( PredTask(speed ~ ., dfm_base_tr),
-                               c(Workflow(wf='standardWF',wfID="standRF",
-                                          learner="rpartXse"),
-                                 Workflow(wf='timeseriesWF',wfID="slideRF",
-                                          learner="rpartXse",
-                                          type="slide"),
-                                 Workflow(wf='timeseriesWF',wfID="growRF",
-                                          learner="rpartXse",
-                                          type="grow")),
-                               EstimationTask(metrics=c("mse","rmse"),
-                                              method=MonteCarlo(nReps=10,szTrain=0.25,szTest=0.25)))
-
-res_all_rf_v2<- performanceEstimation( PredTask(speed ~ ., dfm_base_tr),
-                                       c(Workflow(wf='standardWF',wfID="standRF",
-                                                  learner="randomForest"),
-                                         Workflow(wf='timeseriesWF',wfID="slideRF",
-                                                  learner="randomForest",
-                                                  type="slide"),
-                                         Workflow(wf='timeseriesWF',wfID="growRF",
-                                                  learner="randomForest",
-                                                  type="grow")),
-                                       EstimationTask(metrics=c("mse","rmse"),
-                                                      method=MonteCarlo(nReps=10,szTrain=0.2,szTest=0.2)))
-
-res_all_mars <- performanceEstimation( PredTask(speed ~ ., dfm_base_tr),
-                                       c(Workflow(wf='standardWF',wfID="standRF",
-                                                  learner="earth"),
-                                         Workflow(wf='timeseriesWF',wfID="slideRF",
-                                                  learner="earth",
-                                                  type="slide"),
-                                         Workflow(wf='timeseriesWF',wfID="growRF",
-                                                  learner="earth",
-                                                  type="grow")),
-                                       EstimationTask(metrics=c("mse","rmse"),
-                                                      method=MonteCarlo(nReps=10,szTrain=0.25,szTest=0.25)))
-
-rankWorkflows(res_all_tree)
-rankWorkflows(res_all_RF)
-rankWorkflows(res_all_mars)
-plot(res_all_1)
-summary(res_all_1)
 
 #--------------------------- Plotting Rf -------------------------#
 ##############################################################
