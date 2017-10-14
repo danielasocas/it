@@ -150,7 +150,10 @@ mars.mod <- train(speed ~ .,
 mars.mod
 #--------------------------- Results -------------------------#
 ##############################################################
-results_ <- resamples(list( rf=rf.mod, repart = tree.mod, gbm=gbm.mod))
+results_ <- resamples(list( rf=rf.mod, 
+                            repart = tree.mod, 
+                            gbm=gbm.mod,
+                            mars=mars.mod))
 
 results <- resamples(list(mars=mars.mod,
                           gbm=gbm.mod,

@@ -5,25 +5,18 @@ output: html_notebook
 Growing window with best model results. 
 Random forest best predictor. 
 
-```{r echo=FALSE}
-
-summary(results)
-summary(results_tree)
-```
-
 
 ```{r}
+summary(results_)
 trellis.par.set(caretTheme())
-dotplot(results, metric = "RMSE")
-dotplot(results_tree, metric = "RMSE")
+dotplot(results_, metric = "RMSE")
 ```
-
 ```{r echo=FALSE}
 rf.mod$finalModel %>% 
   varImpPlot(main="Feature Relevance Scores") 
 ```
 
 ```{r}
-summary(results_)
+fancyRpartPlot(tree.mod$finalModel)
 ```
 

@@ -1,0 +1,8 @@
+name: Publish Document
+title:
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/318332/fc96c74511da4efaac6cf2d2678e809a
+bundleId: https://api.rpubs.com/api/v1/document/318332/fc96c74511da4efaac6cf2d2678e809a
+url: http://rpubs.com/danisocas/318332/edit
+when: 1507988986.61859
