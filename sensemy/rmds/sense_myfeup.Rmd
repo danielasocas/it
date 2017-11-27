@@ -172,7 +172,7 @@ library(rattle)
 # Connecting Sense My FEUP - DS
 
 drv <- dbDriver("PostgreSQL")
-pwd <- "psicopatas"
+#pwd <- password DS 
 
 #Database to connect 
 db <- "sensemyfeup"
@@ -185,9 +185,7 @@ con <-dbConnect(drv,host='localhost',port='15432',dbname=db,user='danielasocas',
 
 ```{r echo=FALSE, eval=FALSE}
 # Connecting OpenStreetMap - Marcio Fontes
-pw <- {
-  "y7dWwByZLWso"
-}
+#pw <- password Marcio Fontes
 
 drv <- dbDriver("PostgreSQL")
 
